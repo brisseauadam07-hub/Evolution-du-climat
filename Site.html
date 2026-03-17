@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualisation des émissions de CO₂</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.0/papaparse.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .card {
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin-top: 20px;
+        }
+        #loading {
+            text-align: center;
+            margin: 20px 0;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center my-4">Visualisation des émissions de CO₂</h1>
+
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Paramètres</h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <label for="startYear" class="form-label">Année de début</label>
+                        <input type="number" class="form-control" id="startYear" value="1950">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="endYear" class="form-label">Année de fin</label>
+                        <input type="number" class="form-control" id="endYear" value="2100">
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <h6>Scénarios à afficher</h6>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="rcp26" value="RCP2.6" checked>
+                        <label class="form-check-label" for="rcp26">RCP2.6</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="rcp45" value="RCP4.5" checked>
+                        <label class="form-check-label" for="rcp45">RCP4.5</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="rcp6" value="RCP6" checked>
+                        <label class="form-check-label" for="rcp6">RCP6</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="rcp85" value="RCP8.5" checked>
+                        <label class="form-check-label" for="rcp85">RCP8.5</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button id="visualize" class="btn btn-primary w-100">Visualiser</button>
+        <div id="loading" class="alert alert-info">Chargement des données en cours...</div>
+
+        <div id="results">
+    <div id="fossilResults" class="card mt-3">
+        <div class="card-body">
+            <h5 class="card-title">Émissions de combustibles fossiles</h5>
+            <!-- Accordion pour les données -->
+            <div class="accordion" id="fossilAccordion">
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="fossilHeading">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fossilData">
+                            Voir les données
+                        </button>
+                    </h2>
+                    <div id="fossilData" class="accordion-collapse collapse" aria-labelledby="fossilHeading" data-bs-parent="#fossilAccordion">
+                        <div class="accordion-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped" id="fossilTable"></table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Graphique toujours visible -->
+            <div class="chart-container">
+                <canvas id="fossilChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div id="landResults" class="card mt-3">
+        <div class="card-body">
+            <h5 class="card-title">Émissions liées à l'utilisation des sols</h5>
+            <!-- Accordion pour les données -->
+            <div class="accordion" id="landAccordion">
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="landHeading">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#landData">
+                            Voir les données
+                        </button>
+                    </h2>
+                    <div id="landData" class="accordion-collapse collapse" aria-labelledby="landHeading" data-bs-parent="#landAccordion">
+                        <div class="accordion-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped" id="landTable"></table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Graphique toujours visible -->
+            <div class="chart-container">
+                <canvas id="landChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+    <script>
+        // URLs des fichiers sur GitHub (à remplacer par les tiennes)
+        const fossilUrl = "https://raw.githubusercontent.com/brisseauadam07-hub/Evolution-du-climat/main/fossil.emissions.txt";
+        const landUrl = "https://raw.githubusercontent.com/brisseauadam07-hub/Evolution-du-climat/main/land.use.emissions.txt";
+
+        // Variables globales
+        let fossilData = null;
+        let landData = null;
+
+        // Afficher le message de chargement
+        document.getElementById('loading').style.display = 'block';
+
+        // Charger les fichiers automatiquement
+        window.onload = function() {
+            Papa.parse(fossilUrl, {
+                header: true,
+                skipEmptyLines: true,
+                delimiter: " ", // À adapter selon ton fichier
+                download: true,
+                complete: function(results) {
+                    fossilData = results.data;
+                    console.log("Fichier émissions combustibles fossiles chargé:", fossilData);
+                    checkDataLoaded();
+                },
+                error: function(error) {
+                    console.error("Erreur chargement fichier combustibles fossiles:", error);
+                }
+            });
+
+            Papa.parse(landUrl, {
+                header: true,
+                skipEmptyLines: true,
+                delimiter: " ", // À adapter selon ton fichier
+                download: true,
+                complete: function(results) {
+                    landData = results.data;
+                    console.log("Fichier émissions utilisation des sols chargé:", landData);
+                    checkDataLoaded();
+                },
+                error: function(error) {
+                    console.error("Erreur chargement fichier utilisation des sols:", error);
+                }
+            });
+        };
+
+        // Vérifier si les deux fichiers sont chargés
+        function checkDataLoaded() {
+            if (fossilData && landData) {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        // Bouton de visualisation
+        document.getElementById('visualize').addEventListener('click', function() {
+            const startYear = parseInt(document.getElementById('startYear').value);
+            const endYear = parseInt(document.getElementById('endYear').value);
+            const scenarios = [];
+            if (document.getElementById('rcp26').checked) scenarios.push('RCP2.6');
+            if (document.getElementById('rcp45').checked) scenarios.push('RCP4.5');
+            if (document.getElementById('rcp6').checked) scenarios.push('RCP6');
+            if (document.getElementById('rcp85').checked) scenarios.push('RCP8.5');
+
+            if (fossilData) processData(fossilData, startYear, endYear, scenarios, 'fossil');
+            if (landData) processData(landData, startYear, endYear, scenarios, 'land');
+        });
+
+        // Traitement des données et affichage
+        function processData(data, startYear, endYear, scenarios, type) {
+            // Filtrer par années
+            const filtered = data.filter(row => {
+                const year = parseInt(row.year);
+                return year >= startYear && year <= endYear;
+            });
+
+            // Afficher le tableau
+            const table = document.getElementById(`${type}Table`);
+            table.innerHTML = '';
+            const headerRow = table.insertRow();
+            ['Année'].concat(scenarios).forEach(header => {
+                const th = document.createElement('th');
+                th.textContent = header;
+                headerRow.appendChild(th);
+            });
+
+            filtered.forEach(row => {
+                const tr = table.insertRow();
+                const yearCell = tr.insertCell();
+                yearCell.textContent = row.year;
+                scenarios.forEach(scenario => {
+                    const cell = tr.insertCell();
+                    cell.textContent = row[scenario] || 'N/A';
+                });
+            });
+
+            // Préparer les données pour le graphique
+            const labels = filtered.map(row => row.year);
+            const datasets = scenarios.map(scenario => {
+                return {
+                    label: scenario,
+                    data: filtered.map(row => parseFloat(row[scenario])),
+                    borderColor: getRandomColor(),
+                    tension: 0.1
+                };
+            });
+
+            // Afficher le graphique
+            const ctx = document.getElementById(`${type}Chart`).getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: { labels: labels, datasets: datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: `${type === 'fossil' ? 'Combustibles fossiles' : 'Utilisation des sols'} (${startYear}-${endYear})`
+                        }
+                    },
+                    scales: {
+                        y: { beginAtZero: false }
+                    }
+                }
+            });
+        }
+
+        // Couleur aléatoire pour les graphiques
+        function getRandomColor() {
+            const letters = '0123456789ABCDEF';
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</script>
+</body>
+</html>
