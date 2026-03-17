@@ -71,68 +71,70 @@
         <div id="loading" class="alert alert-info">Chargement des données en cours...</div>
 
         <div id="results">
-    <div id="fossilResults" class="card mt-3">
-        <div class="card-body">
-            <h5 class="card-title">Émissions de combustibles fossiles</h5>
-            <!-- Accordion pour les données -->
-            <div class="accordion" id="fossilAccordion">
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="fossilHeading">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fossilData">
-                            Voir les données
-                        </button>
-                    </h2>
-                    <div id="fossilData" class="accordion-collapse collapse" aria-labelledby="fossilHeading" data-bs-parent="#fossilAccordion">
-                        <div class="accordion-body">
-                            <div class="table-responsive">
-                                <table class="table table-striped" id="fossilTable"></table>
+            <div id="fossilResults" class="card mt-3">
+                <div class="card-body">
+                    <h5 class="card-title">Émissions de combustibles fossiles</h5>
+                    <div class="accordion" id="fossilAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="fossilHeading">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fossilData">
+                                    Voir les données
+                                </button>
+                            </h2>
+                            <div id="fossilData" class="accordion-collapse collapse" aria-labelledby="fossilHeading" data-bs-parent="#fossilAccordion">
+                                <div class="accordion-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-striped" id="fossilTable"></table>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
+                    <div class="chart-container">
+                        <canvas id="fossilChart"></canvas>
+                    </div>
                 </div>
             </div>
-            <!-- Graphique toujours visible -->
-            <div class="chart-container">
-                <canvas id="fossilChart"></canvas>
+
+            <div id="landResults" class="card mt-3">
+                <div class="card-body">
+                    <h5 class="card-title">Émissions liées à l'utilisation des sols</h5>
+                    <div class="accordion" id="landAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="landHeading">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#landData">
+                                    Voir les données
+                                </button>
+                            </h2>
+                            <div id="landData" class="accordion-collapse collapse" aria-labelledby="landHeading" data-bs-parent="#landAccordion">
+                                <div class="accordion-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-striped" id="landTable"></table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="landChart"></canvas>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <div id="landResults" class="card mt-3">
-        <div class="card-body">
-            <h5 class="card-title">Émissions liées à l'utilisation des sols</h5>
-            <!-- Accordion pour les données -->
-            <div class="accordion" id="landAccordion">
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="landHeading">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#landData">
-                            Voir les données
-                        </button>
-                    </h2>
-                    <div id="landData" class="accordion-collapse collapse" aria-labelledby="landHeading" data-bs-parent="#landAccordion">
-                        <div class="accordion-body">
-                            <div class="table-responsive">
-                                <table class="table table-striped" id="landTable"></table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- Graphique toujours visible -->
-            <div class="chart-container">
-                <canvas id="landChart"></canvas>
-            </div>
-        </div>
-    </div>
-</div>
-
-
+    <!-- Scripts dans l'ordre correct -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // URLs des fichiers sur GitHub (à remplacer par les tiennes)
+        // Variables globales pour stocker les instances des graphiques
+        let fossilChartInstance = null;
+        let landChartInstance = null;
+
+        // URLs des fichiers sur GitHub
         const fossilUrl = "https://raw.githubusercontent.com/brisseauadam07-hub/Evolution-du-climat/main/fossil.emissions.txt";
         const landUrl = "https://raw.githubusercontent.com/brisseauadam07-hub/Evolution-du-climat/main/land.use.emissions.txt";
 
-        // Variables globales
+        // Variables globales pour les données
         let fossilData = null;
         let landData = null;
 
@@ -153,6 +155,7 @@
                 },
                 error: function(error) {
                     console.error("Erreur chargement fichier combustibles fossiles:", error);
+                    document.getElementById('loading').innerHTML = "Erreur de chargement du fichier combustibles fossiles.";
                 }
             });
 
@@ -168,6 +171,7 @@
                 },
                 error: function(error) {
                     console.error("Erreur chargement fichier utilisation des sols:", error);
+                    document.getElementById('loading').innerHTML = "Erreur de chargement du fichier utilisation des sols.";
                 }
             });
         };
@@ -201,6 +205,12 @@
                 return year >= startYear && year <= endYear;
             });
 
+            // Vérifier qu'il y a des données à afficher
+            if (filtered.length === 0) {
+                console.error("Aucune donnée pour la période sélectionnée.");
+                return;
+            }
+
             // Afficher le tableau
             const table = document.getElementById(`${type}Table`);
             table.innerHTML = '';
@@ -217,26 +227,46 @@
                 yearCell.textContent = row.year;
                 scenarios.forEach(scenario => {
                     const cell = tr.insertCell();
-                    cell.textContent = row[scenario] || 'N/A';
+                    cell.textContent = row[scenario] ? row[scenario] : 'N/A';
                 });
             });
 
             // Préparer les données pour le graphique
             const labels = filtered.map(row => row.year);
-            const datasets = scenarios.map(scenario => {
-                return {
-                    label: scenario,
-                    data: filtered.map(row => parseFloat(row[scenario])),
-                    borderColor: getRandomColor(),
-                    tension: 0.1
-                };
+            const datasets = [];
+            scenarios.forEach(scenario => {
+                if (filtered[0][scenario] !== undefined) {
+                    datasets.push({
+                        label: scenario,
+                        data: filtered.map(row => parseFloat(row[scenario])),
+                        borderColor: getRandomColor(),
+                        tension: 0.1,
+                        fill: false
+                    });
+                }
             });
 
-            // Afficher le graphique
+            // Vérifier qu'il y a des datasets à afficher
+            if (datasets.length === 0) {
+                console.error("Aucun scénario valide sélectionné ou disponible.");
+                return;
+            }
+
+            // Détruire le graphique précédent s'il existe
             const ctx = document.getElementById(`${type}Chart`).getContext('2d');
-            new Chart(ctx, {
+            if (type === 'fossil' && fossilChartInstance !== null) {
+                fossilChartInstance.destroy();
+            } else if (type === 'land' && landChartInstance !== null) {
+                landChartInstance.destroy();
+            }
+
+            // Créer le nouveau graphique
+            const newChart = new Chart(ctx, {
                 type: 'line',
-                data: { labels: labels, datasets: datasets },
+                data: {
+                    labels: labels,
+                    datasets: datasets
+                },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
@@ -244,13 +274,35 @@
                         title: {
                             display: true,
                             text: `${type === 'fossil' ? 'Combustibles fossiles' : 'Utilisation des sols'} (${startYear}-${endYear})`
+                        },
+                        legend: {
+                            position: 'top',
                         }
                     },
                     scales: {
-                        y: { beginAtZero: false }
+                        y: {
+                            beginAtZero: false,
+                            title: {
+                                display: true,
+                                text: 'Émissions (GtCO₂/an)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Année'
+                            }
+                        }
                     }
                 }
             });
+
+            // Stocker l'instance du graphique
+            if (type === 'fossil') {
+                fossilChartInstance = newChart;
+            } else {
+                landChartInstance = newChart;
+            }
         }
 
         // Couleur aléatoire pour les graphiques
@@ -262,7 +314,7 @@
             }
             return color;
         }
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-</script>
+    </script>
 </body>
 </html>
+
