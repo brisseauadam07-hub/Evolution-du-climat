@@ -3,27 +3,178 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulateur Climatique - Fichiers TXT Uniques</title>
+    <title>Simulateur Climatique Officiel - GIEC</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }
-        .container { max-width: 1300px; margin: 0 auto; background: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        h1 { text-align: center; color: #2c3e50; margin-bottom: 5px; }
-        .controls { display: flex; justify-content: center; gap: 15px; align-items: center; background: #eef2f3; padding: 15px; border-radius: 8px; margin-bottom: 25px; }
-        select { padding: 10px 18px; font-size: 16px; border-radius: 6px; border: 1px solid #bdc3c7; background: white; cursor: pointer; }
-        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
-        .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; }
-        .full-width { grid-column: span 2; }
-        .canvas-container { position: relative; width: 100%; height: 350px; }
-        .loading-status { text-align: center; color: #d35400; font-weight: bold; margin-bottom: 15px; padding: 10px; background: #fff3cd; border-radius: 6px; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        .authors {
+            text-align: center;
+            font-style: italic;
+            color: #7f8c8d;
+            margin-bottom: 25px;
+            font-size: 0.95em;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            align-items: center;
+            background: #eef2f3;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+        }
+        select {
+            padding: 10px 18px;
+            font-size: 16px;
+            border-radius: 6px;
+            border: 1px solid #bdc3c7;
+            background: white;
+            cursor: pointer;
+        }
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+        }
+        .card {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        }
+        .full-width {
+            grid-column: span 2;
+        }
+        .kpi-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            grid-column: span 2;
+            background: #fff8eb;
+            border-left: 5px solid #f39c12;
+            padding: 15px;
+            border-radius: 6px;
+        }
+        .kpi-box {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .kpi-box.with-thermometer {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .kpi-box h3 {
+            margin: 0;
+            font-size: 12px;
+            color: #7f8c8d;
+            text-transform: uppercase;
+        }
+        .kpi-box p {
+            margin: 5px 0 0 0;
+            font-size: 18px;
+            font-weight: bold;
+            color: #d35400;
+        }
+        .thermometer-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 30px;
+            height: 70px;
+            position: relative;
+            margin-right: 10px;
+        }
+        .thermometer-tube {
+            width: 10px;
+            height: 50px;
+            background: #e2e8f0;
+            border: 2px solid #bdc3c7;
+            border-radius: 5px 5px 0 0;
+            position: relative;
+            overflow: hidden;
+            border-bottom: none;
+        }
+        .thermometer-mercury {
+            width: 100%;
+            height: 0%;
+            background: #2ecc71;
+            position: absolute;
+            bottom: 0;
+            transition: height 0.5s ease, background-color 0.5s ease;
+        }
+        .thermometer-bulb {
+            width: 18px;
+            height: 18px;
+            background: #2ecc71;
+            border: 2px solid #bdc3c7;
+            border-radius: 50%;
+            margin-top: -4px;
+            z-index: 2;
+            transition: background-color 0.5s ease;
+        }
+        h3.chart-title {
+            text-align: center;
+            margin-top: 0;
+            color: #34495e;
+        }
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            height: 350px;
+        }
+        .analysis {
+            margin-top: 15px;
+            padding: 12px 15px;
+            background-color: #f8fafc;
+            border-left: 4px solid #34495e;
+            font-size: 14.5px;
+            line-height: 1.6;
+            color: #475569;
+            border-radius: 0 4px 4px 0;
+        }
+        .loading-status {
+            text-align: center;
+            color: #d35400;
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #fff3cd;
+            border-radius: 6px;
+            grid-column: span 2;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>Simulateur Climatique Simplifié</h1>
+    <h1>Simulateur Climatique Multi-Scénarios</h1>
+    <div class="authors">Développé par Adam B., Maëlis G., Ethan D., Benjamin D., Zakaria F.</div>
     
-    <div id="loadingStatus" class="loading-status">Chargement de "fossil.emissions.txt" et "land.use.emissions.txt"...</div>
+    <div id="loadingStatus" class="loading-status">Chargement des fichiers "fossil.emissions.txt" et "land.use.emissions.txt" depuis le dépôt...</div>
 
     <div class="controls">
         <label for="scenarioSelect"><strong>Scénario d'analyse ciblé : </strong></label>
@@ -36,31 +187,79 @@
     </div>
 
     <div class="dashboard">
+        <div class="kpi-container">
+            <div class="kpi-box">
+                <h3>Franchissement +1.5°C</h3>
+                <p id="kpi15">-</p>
+            </div>
+            <div class="kpi-box">
+                <h3>CO₂ Atmosphérique (2100)</h3>
+                <p id="kpiCo2">-</p>
+            </div>
+            <div class="kpi-box with-thermometer">
+                <div>
+                    <h3>Anomalie Température (2100)</h3>
+                    <p id="kpiTemp">-</p>
+                </div>
+                <div class="thermometer-wrapper">
+                    <div class="thermometer-tube">
+                        <div id="thermoMercury" class="thermometer-mercury"></div>
+                    </div>
+                    <div id="thermoBulb" class="thermometer-bulb"></div>
+                </div>
+            </div>
+            <div class="kpi-box">
+                <h3>Pente TCRE du Scénario</h3>
+                <p id="kpiTcre">-</p>
+            </div>
+        </div>
+
         <div class="card full-width">
-            <h3 style="text-align:center;">Émissions Fossiles Globales (GtC)</h3>
+            <h3 class="chart-title">Émissions fossiles (Données réelles .txt)</h3>
             <div class="canvas-container">
                 <canvas id="chartFossilDF"></canvas>
             </div>
         </div>
 
         <div class="card full-width">
-            <h3 style="text-align:center;">Émissions Usage des Sols (GtC)</h3>
+            <h3 class="chart-title">Émissions liées à l'usage des sols (Données réelles .txt)</h3>
             <div class="canvas-container">
                 <canvas id="chartLandDF"></canvas>
             </div>
         </div>
 
+        <div class="card full-width">
+            <h3 class="chart-title">Puits de carbone indépendants</h3>
+            <div class="canvas-container">
+                <canvas id="chartSinks"></canvas>
+            </div>
+        </div>
+
         <div class="card">
-            <h3 style="text-align:center;">Concentration en CO₂ Atmosphérique</h3>
+            <h3 class="chart-title">Évolution comparative du CO₂ atmosphérique</h3>
             <div class="canvas-container">
                 <canvas id="chartCO2Combined"></canvas>
             </div>
         </div>
 
         <div class="card">
-            <h3 style="text-align:center;">Anomalie de Température Globale</h3>
+            <h3 class="chart-title">Évolution comparative de la température</h3>
             <div class="canvas-container">
                 <canvas id="chartTempCombined"></canvas>
+            </div>
+        </div>
+    
+        <div class="card full-width">
+            <h3 class="chart-title">Évolution temporelle absolue des réservoirs de carbone</h3>
+            <div class="canvas-container">
+                <canvas id="chartReservoirs"></canvas>
+            </div>
+        </div>
+
+        <div class="card full-width">
+            <h3 class="chart-title">Distance euclidienne des réservoirs de carbone</h3>
+            <div class="canvas-container">
+                <canvas id="chartEuclidean"></canvas>
             </div>
         </div>
     </div>
@@ -74,12 +273,14 @@
     const Tatm_initial = 288.15;
     const Toc_initial = 283.0;
     
-    // Constantes de conversion et modèle
     const m_atmosphere = 5.1352e18;
     const M_CO2 = 44.01; const M_C = 12.01; const M_air = 28.97;
     const ppm_to_gtc = (m_atmosphere * (M_CO2 / M_air) * 1e-6 * (M_C / M_CO2)) / 1e12;
+
     const K_aero = -0.7; const K_CO2 = 3.7; const tau_clim = 7; const S = 0.6;
-    const tau_AS = 50;
+    const tau_L = 2, tau_F = 20, tau_S = 500, epsilon = 0.5, MORT = 60, NPP0 = 60, beta = 0.36;
+    const S_carbon_initial = 1000;
+    const k_ALa = 0.05, k_LaA = 0.05, tau_AS = 50;
 
     const scenarios = ["RCP2.6", "RCP4.5", "RCP6", "RCP8.5"];
     const colors = { 'RCP2.6': '#3b82f6', 'RCP4.5': '#10b981', 'RCP6': '#f59e0b', 'RCP8.5': '#ef4444' };
@@ -87,132 +288,250 @@
     let years = [];
     for (let y = startYear; y <= endYear; y++) years.push(y);
 
-    // Initialisation des structures de données vides
     let dataTables = {
         dbFossil: { "RCP2.6": [], "RCP4.5": [], "RCP6": [], "RCP8.5": [] },
         dbLand: { "RCP2.6": [], "RCP4.5": [], "RCP6": [], "RCP8.5": [] }
     };
 
-    // --- PARSER DYNAMIQUE POUR TES DEUX FICHIERS TXT ---
-    async function loadDataFromTxtFiles() {
+    // --- LECTURE ET PARSING CORRECT ET SÉCURISÉ DES FICHIERS ---
+    async function loadTxtFiles() {
         try {
-            // 1. Lecture du fichier fossile
             let respFossil = await fetch('fossil.emissions.txt');
             let textFossil = await respFossil.text();
-            parseTxtToDatabase(textFossil, dataTables.dbFossil);
+            parseColumns(textFossil, dataTables.dbFossil);
 
-            // 2. Lecture du fichier land use
             let respLand = await fetch('land.use.emissions.txt');
             let textLand = await respLand.text();
-            parseTxtToDatabase(textLand, dataTables.dbLand);
+            parseColumns(textLand, dataTables.dbLand);
 
-            // Masquer le statut de chargement et débloquer le sélecteur
             document.getElementById('loadingStatus').style.display = 'none';
             document.getElementById('scenarioSelect').disabled = false;
 
             initCharts();
             updateDashboard();
-
         } catch (error) {
-            document.getElementById('loadingStatus').innerText = "Erreur : Impossible de lire 'fossil.emissions.txt' ou 'land.use.emissions.txt'. Lance un serveur local !";
+            document.getElementById('loadingStatus').innerText = "Erreur de chargement. Si vous êtes en local, lancez un serveur Python (http.server). Sur GitHub, vérifiez les noms des fichiers.";
             console.error(error);
         }
     }
 
-    function parseTxtToDatabase(rawText, targetDb) {
-        let lines = rawText.split('\n');
-        let yearIndex = 0;
-
+    function parseColumns(text, targetDb) {
+        let lines = text.split('\n');
+        let idx = 0;
         for (let line of lines) {
-            let cleanLine = line.trim();
-            if (cleanLine === "" || cleanLine.startsWith('#')) continue; // Ignore les lignes vides ou commentaires
-
-            // Sépare la ligne par n'importe quel espace, tabulation ou virgule
-            let tokens = cleanLine.split(/[\s,;\t]+/).map(Number);
+            let clean = line.trim();
+            if (clean === "" || clean.startsWith('#')) continue;
             
-            // Si la ligne comporte 5 colonnes (Année + 4 scénarios), la première colonne est l'année
+            let tokens = clean.split(/[\s,;\t]+/).map(Number);
+            // Si la ligne contient l'année en colonne 0, on l'exclut pour ne garder que les 4 valeurs des RCP
             let values = tokens.length >= 5 ? tokens.slice(1) : tokens;
 
-            if (yearIndex < years.length && values.length >= 4) {
-                let currentYear = years[yearIndex];
-                targetDb["RCP2.6"].push({ x: currentYear, y: values[0] });
-                targetDb["RCP4.5"].push({ x: currentYear, y: values[1] });
-                targetDb["RCP6"].push({ x: currentYear, y: values[2] });
-                targetDb["RCP8.5"].push({ x: currentYear, y: values[3] });
-                yearIndex++;
+            if (idx < years.length && values.length >= 4) {
+                let y = years[idx];
+                targetDb["RCP2.6"].push({ x: y, y: values[0] });
+                targetDb["RCP4.5"].push({ x: y, y: values[1] });
+                targetDb["RCP6"].push({ x: y, y: values[2] });
+                targetDb["RCP8.5"].push({ x: y, y: values[3] });
+                idx++;
             }
         }
     }
 
-    // --- LE MOTEUR PHYSIQUE ---
+    function gaussienne(t, a, mu, sigma) {
+        return a * Math.exp(-Math.pow(t - mu, 2) / (2 * Math.pow(sigma, 2)));
+    }
+
+    function deforestation(t) {
+        if (t >= 1825 && t <= 2125) {
+            return 2.0 * 0.5 * (1 - Math.cos(Math.PI * (t - 1825) / 300));
+        }
+        return 0.0;
+    }
+
+    // --- LE MOTEUR DE SIMULATION PHYSIQUE ---
     function runModel(scenario) {
         let CO2_levels = new Array(years.length);
         let Tatm_levels = new Array(years.length);
+        let Toc_levels = new Array(years.length);
+        let L = new Array(years.length);
+        let F_soil = new Array(years.length);
+        let S_soil = new Array(years.length);
+        let A = new Array(years.length);
+        let La = new Array(years.length);
+        let O_surf = new Array(years.length);
+        let cumEmissionsGtc = new Array(years.length);
+
         CO2_levels[0] = CO2_preindustrial;
         Tatm_levels[0] = Tatm_initial;
+        Toc_levels[0] = Toc_initial;
+        
+        let L0 = tau_L * NPP0;
+        let F0 = (tau_L / tau_F) * (1 - epsilon) * L0;
+        let S0 = (tau_S / tau_F) * (1 - epsilon) * F0;
+        
+        L[0] = L0; F_soil[0] = F0; S_soil[0] = S0; 
+        A[0] = CO2_preindustrial * ppm_to_gtc;
+        La[0] = 500; 
+        O_surf[0] = S_carbon_initial;
+        cumEmissionsGtc[0] = 0;
+
         let pCO2_ocean = CO2_preindustrial;
+        let totalCum = 0;
 
         for (let i = 1; i < years.length; i++) {
-            // Utilisation directe des valeurs extraites de tes fichiers textes
+            let y = years[i];
             let em_fossil = dataTables.dbFossil[scenario][i-1].y;
             let em_land = dataTables.dbLand[scenario][i-1].y;
             
             let em_total_gtc = em_fossil + em_land;
+            totalCum += em_total_gtc;
+            cumEmissionsGtc[i] = totalCum;
+
             let em_ppm = em_total_gtc / ppm_to_gtc;
+            let sink_gtc = gaussienne(y, 0.65, 1950, 20) + gaussienne(y, 0.5, 2010, 20) + gaussienne(y, 0.7, 1980, 20);
+            let sink_ppm = sink_gtc / ppm_to_gtc;
 
             let delta_CO2 = CO2_levels[i-1] - pCO2_ocean;
             let flux_ocean = (delta_CO2 / tau_AS) * dt;
 
-            CO2_levels[i] = CO2_levels[i-1] + em_ppm * dt - flux_ocean;
+            CO2_levels[i] = CO2_levels[i-1] + (em_ppm - sink_ppm) * dt - flux_ocean;
             if (CO2_levels[i] < CO2_preindustrial) CO2_levels[i] = CO2_preindustrial;
 
             let F_CO2 = K_CO2 * (Math.log(CO2_levels[i] / CO2_preindustrial) / Math.log(2));
             let F_aero = K_aero * (em_fossil / 10.0);
+            let R_forcing = F_CO2 + F_aero;
+
+            Tatm_levels[i] = Tatm_initial + S * R_forcing; 
+            Toc_levels[i] = Toc_levels[i-1] + (Tatm_levels[i] - Toc_levels[i-1]) * dt / tau_clim;
+
+            let current_NPP = NPP0 * (1 + beta * Math.log(CO2_levels[i-1] / CO2_preindustrial));
+            let defor = deforestation(y);
             
-            Tatm_levels[i] = Tatm_levels[i-1] + S * (F_CO2 + F_aero) * (dt / tau_clim);
+            let dL_dt = current_NPP - L[i-1] / tau_L - MORT - defor;
+            let flux_L_to_F = L[i-1] / tau_L;
+            let dF_dt = flux_L_to_F - F_soil[i-1] / tau_F * (1 - epsilon);
+            let flux_F_to_S = F_soil[i-1] / tau_F;
+            let dS_dt = flux_F_to_S - S_soil[i-1] / tau_S * (1 - epsilon);
+
+            L[i] = L[i-1] + dL_dt * dt;
+            F_soil[i] = F_soil[i-1] + dF_dt * dt;
+            S_soil[i] = S_soil[i-1] + dS_dt * dt;
+
+            A[i] = CO2_levels[i] * ppm_to_gtc;
+            let FALa = k_ALa * (A[i-1] - A[0]);
+            let FLaA = k_LaA * (La[i-1] - La[0]);
+            La[i] = La[i-1] + (FALa - FLaA) * dt;
+            O_surf[i] = O_surf[i-1] + (A[i] - A[i-1]) - (La[i] - La[i-1]);
         }
-        return { CO2_levels, Tatm_levels };
+        return { CO2_levels, Tatm_levels, Toc_levels, L, F_soil, S_soil, A, La, O_surf, cumEmissionsGtc };
     }
 
     let charts = {};
     function initCharts() {
-        const commonOptions = { responsive: true, maintainAspectRatio: false, scales: { x: { type: 'linear', min: 1750, max: 2100 } } };
+        const commonOptions = {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } },
+            scales: {
+                x: { type: 'linear', min: 1750, max: 2100, ticks: { callback: v => v }, grid: { color: 'rgba(200, 200, 200, 0.15)' } },
+                y: { grid: { color: 'rgba(200, 200, 200, 0.15)' } }
+            }
+        };
+
         charts.fossilDF = new Chart(document.getElementById('chartFossilDF').getContext('2d'), { type: 'line', data: { datasets: [] }, options: commonOptions });
         charts.landDF = new Chart(document.getElementById('chartLandDF').getContext('2d'), { type: 'line', data: { datasets: [] }, options: commonOptions });
+        
+        let reboisement = years.map(y => ({ x: y, y: gaussienne(y, 0.65, 1950, 20) }));
+        let fertilisants = years.map(y => ({ x: y, y: gaussienne(y, 0.7, 1980, 20) }));
+        let foret_boreale = years.map(y => ({ x: y, y: gaussienne(y, 0.5, 2010, 20) }));
+        let totalPuits = years.map((y, idx) => ({ x: y, y: reboisement[idx].y + fertilisants[idx].y + foret_boreale[idx].y }));
+        
+        charts.sinks = new Chart(document.getElementById('chartSinks').getContext('2d'), {
+            type: 'line',
+            data: { datasets: [
+                { label: 'Reboisement', data: reboisement, borderColor: 'blue', fill: false, pointRadius: 0 },
+                { label: 'Fertilisants', data: fertilisants, borderColor: 'orange', fill: false, pointRadius: 0 },
+                { label: 'Forêt boréale', data: foret_boreale, borderColor: 'green', fill: false, pointRadius: 0 },
+                { label: 'Somme Puits', data: totalPuits, borderColor: 'red', borderWidth: 2.5, pointRadius: 0 }
+            ]}, options: commonOptions
+        });
+
         charts.co2Combined = new Chart(document.getElementById('chartCO2Combined').getContext('2d'), { type: 'line', data: { datasets: [] }, options: commonOptions });
         charts.tempCombined = new Chart(document.getElementById('chartTempCombined').getContext('2d'), { type: 'line', data: { datasets: [] }, options: commonOptions });
+        charts.reservoirs = new Chart(document.getElementById('chartReservoirs').getContext('2d'), { type: 'line', data: { datasets: [] }, options: commonOptions });
+        charts.euclidean = new Chart(document.getElementById('chartEuclidean').getContext('2d'), { type: 'line', data: { datasets: [] }, options: commonOptions });
     }
 
     function updateDashboard() {
         let activeScenario = document.getElementById('scenarioSelect').value;
         let allData = {};
         scenarios.forEach(scen => { allData[scen] = runModel(scen); });
+        let currentData = allData[activeScenario];
 
-        // Rendu des graphiques d'émissions (Fossile & Sols) issus de tes fichiers .txt
+        // --- CALCULS ET RENDU DES KPI ---
+        let deltaT = currentData.Tatm_levels.map(t => t - Tatm_initial);
+        let idx15 = deltaT.findIndex(t => t >= 1.5);
+        document.getElementById('kpi15').innerText = idx15 !== -1 ? years[idx15] + " ⚠️" : "Non franchi";
+        document.getElementById('kpiCo2').innerText = Math.round(currentData.CO2_levels[years.length - 1]) + " ppm";
+        
+        let finalTemp = currentData.Tatm_levels[years.length - 1];
+        document.getElementById('kpiTemp').innerText = finalTemp.toFixed(2) + " K";
+        let finalDeltaT = finalTemp - Tatm_initial;
+        let percentageHeight = Math.min((finalDeltaT / 5.0) * 100, 100);
+        let thermoColor = finalDeltaT < 1.5 ? "#2ecc71" : (finalDeltaT < 2.5 ? "#e67e22" : "#e74c3c");
+        
+        document.getElementById('thermoMercury').style.height = percentageHeight + "%";
+        document.getElementById('thermoMercury').style.backgroundColor = thermoColor;
+        document.getElementById('thermoBulb').style.backgroundColor = thermoColor;
+
+        let maxE = currentData.cumEmissionsGtc[years.length - 1];
+        let slope = (finalDeltaT / maxE) * 1000;
+        document.getElementById('kpiTcre').innerText = slope.toFixed(2) + " K / 1000 GtC";
+
+        // --- MISE À JOUR DES GRAPHIQUES D'ÉMISSIONS ---
         charts.fossilDF.data.datasets = scenarios.map(scen => ({
-            label: `Émissions ${scen}`, data: dataTables.dbFossil[scen], borderColor: colors[scen], borderWidth: scen === activeScenario ? 3 : 1, pointRadius: 0
+            label: `Scénario ${scen}`, data: dataTables.dbFossil[scen], borderColor: colors[scen], borderWidth: scen === activeScenario ? 3 : 1.2, pointRadius: 0
         }));
         charts.fossilDF.update();
 
         charts.landDF.data.datasets = scenarios.map(scen => ({
-            label: `Usage des Sols ${scen}`, data: dataTables.dbLand[scen], borderColor: colors[scen], borderWidth: scen === activeScenario ? 3 : 1, pointRadius: 0
+            label: `Scénario ${scen}`, data: dataTables.dbLand[scen], borderColor: colors[scen], borderWidth: scen === activeScenario ? 3 : 1.2, pointRadius: 0
         }));
         charts.landDF.update();
 
-        // Rendu des résultats physiques calculés
+        // --- GRAPHIQUES CO2 ET TEMPERATURES COMPARATIFS ---
         charts.co2Combined.data.datasets = scenarios.map(scen => ({
-            label: `CO₂ ${scen}`, data: years.map((y, idx) => ({ x: y, y: allData[scen].CO2_levels[idx] })), borderColor: colors[scen], pointRadius: 0
+            label: `CO₂ ${scen}`, data: years.map((y, idx) => ({ x: y, y: allData[scen].CO2_levels[idx] })), borderColor: colors[scen], borderWidth: 2, pointRadius: 0
         }));
         charts.co2Combined.update();
 
         charts.tempCombined.data.datasets = scenarios.map(scen => ({
-            label: `T° ${scen}`, data: years.map((y, idx) => ({ x: y, y: allData[scen].Tatm_levels[idx] - Tatm_initial })), borderColor: colors[scen], pointRadius: 0
+            label: `Anomalie T° ${scen}`, data: years.map((y, idx) => ({ x: y, y: allData[scen].Tatm_levels[idx] - Tatm_initial })), borderColor: colors[scen], borderWidth: 2, pointRadius: 0
         }));
         charts.tempCombined.update();
+
+        // --- COHÉRENCE ET SYNTAXE FIXÉE POUR LES RÉSERVOIRS ---
+        let totalSolSeries = years.map((y, idx) => currentData.L[idx] + currentData.F_soil[idx] + currentData.S_soil[idx]);
+
+        charts.reservoirs.data.datasets = [
+            { label: 'Atmosphère (A)', data: years.map((y, idx) => ({ x: y, y: currentData.A[idx] })), borderColor: '#1e3a8a', borderWidth: 2.5, pointRadius: 0 },
+            { label: 'Océan de surface (O_surf)', data: years.map((y, idx) => ({ x: y, y: currentData.O_surf[idx] })), borderColor: '#0d9488', borderWidth: 2.5, pointRadius: 0 },
+            { label: 'Biosphère végétale (La)', data: years.map((y, idx) => ({ x: y, y: currentData.La[idx] })), borderColor: '#15803d', borderWidth: 2.5, pointRadius: 0 },
+            { label: 'Sols globaux (Litière + Humus)', data: years.map((y, idx) => ({ x: y, y: totalSolSeries[idx] })), borderColor: '#7c2d12', borderWidth: 2.5, pointRadius: 0 }
+        ];
+        charts.reservoirs.update();
+
+        let totalSolInit = currentData.L[0] + currentData.F_soil[0] + currentData.S_soil[0];
+        charts.euclidean.data.datasets = [
+            { label: 'Atmosphère (A)', data: years.map((y, idx) => ({ x: y, y: Math.abs(currentData.A[idx] - currentData.A[0]) })), borderColor: '#1e3a8a', borderWidth: 2.5, pointRadius: 0 },
+            { label: 'Océan de surface (O_surf)', data: years.map((y, idx) => ({ x: y, y: Math.abs(currentData.O_surf[idx] - currentData.O_surf[0]) })), borderColor: '#0d9488', borderWidth: 2.5, pointRadius: 0 },
+            { label: 'Biosphère végétale (La)', data: years.map((y, idx) => ({ x: y, y: Math.abs(currentData.La[idx] - currentData.La[0]) })), borderColor: '#15803d', borderWidth: 2.5, pointRadius: 0 },
+            { label: 'Sols globaux', data: years.map((y, idx) => ({ x: y, y: Math.abs(totalSolSeries[idx] - totalSolInit) })), borderColor: '#7c2d12', borderWidth: 2.5, pointRadius: 0 }
+        ];
+        charts.euclidean.update();
     }
 
     window.onload = function() {
-        loadDataFromTxtFiles();
+        loadTxtFiles();
     };
 </script>
 </body>
