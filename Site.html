@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulateur Climatique Simplifié</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        .authors {
+            text-align: center;
+            font-style: italic;
+            color: #7f8c8d;
+            margin-bottom: 25px;
+            font-size: 0.95em;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            align-items: center;
+            background: #eef2f3;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+        }
+        select {
+            padding: 10px 18px;
+            font-size: 16px;
+            border-radius: 6px;
+            border: 1px solid #bdc3c7;
+            background: white;
+            cursor: pointer;
+        }
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+        }
+        .card {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        }
+        .full-width {
+            grid-column: span 2;
+        }
+        .kpi-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            grid-column: span 2;
+            background: #fff8eb;
+            border-left: 5px solid #f39c12;
+            padding: 15px;
+            border-radius: 6px;
+        }
+        .kpi-box {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .kpi-box.with-thermometer {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .kpi-box h3 {
+            margin: 0;
+            font-size: 12px;
+            color: #7f8c8d;
+            text-transform: uppercase;
+        }
+        .kpi-box p {
+            margin: 5px 0 0 0;
+            font-size: 18px;
+            font-weight: bold;
+            color: #d35400;
+        }
+        
+        /* --- DESIGN DU THERMOMÈTRE DYNAMIQUE --- */
+        .thermometer-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 30px;
+            height: 70px;
+            position: relative;
+            margin-right: 10px;
+        }
+        .thermometer-tube {
+            width: 10px;
+            height: 50px;
+            background: #e2e8f0;
+            border: 2px solid #bdc3c7;
+            border-radius: 5px 5px 0 0;
+            position: relative;
+            overflow: hidden;
+            border-bottom: none;
+        }
+        .thermometer-mercury {
+            width: 100%;
+            height: 0%;
+            background: #2ecc71;
+            position: absolute;
+            bottom: 0;
+            transition: height 0.5s ease, background-color 0.5s ease;
+        }
+        .thermometer-bulb {
+            width: 18px;
+            height: 18px;
+            background: #2ecc71;
+            border: 2px solid #bdc3c7;
+            border-radius: 50%;
+            margin-top: -4px;
+            z-index: 2;
+            transition: background-color 0.5s ease;
+        }
+
+        h3.chart-title {
+            text-align: center;
+            margin-top: 0;
+            color: #34495e;
+        }
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            height: 350px;
+        }
+
+        /* --- STYLE DES TEXTES D'ANALYSE --- */
+        .analysis {
+            margin-top: 15px;
+            padding: 12px 15px;
+            background-color: #f8fafc;
+            border-left: 4px solid #34495e;
+            font-size: 14.5px;
+            line-height: 1.6;
+            color: #475569;
+            border-radius: 0 4px 4px 0;
+        }
+        .analysis strong {
+            color: #1e293b;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Simulateur Climatique Simplifié</h1>
+    <div class="authors">Développé par Adam B., Maëlis G., Ethan D., Benjamin D., Zakaria F.</div>
+    <div class="analysis">
+	Face à l'urgence que représente le changement climatique, le GIEC propose différent scénarios d'évolution du climat en fonction des trajectoires politiques, économiques et technologiques effectué par l'humanité. Allant de la transtion immédiate (scénario optimiste) à des croissances basé sur un maintient des énergies fossiles (scénario pessimiste). L'étude de ces scénarios permet ainsi de modéliser la réponse du système climatique mondial face à l'impact anthropique.
+    </div>
+    <div class="controls">
+        <label for="scenarioSelect"><strong>Scénario d'analyse ciblé : </strong></label>
+        <select id="scenarioSelect" onchange="updateDashboard()">
+            <option value="RCP2.6">RCP 2.6 (Transition agressive)</option>
+            <option value="RCP4.5" selected>RCP 4.5 (Stabilisation modérée)</option>
+            <option value="RCP6">RCP 6.0 (Stabilisation tardive)</option>
+            <option value="RCP8.5">RCP 8.5 (Scénario extrême)</option>
+        </select>
+    </div>
+
+    <div class="dashboard">
+        <div class="kpi-container">
+            <div class="kpi-box">
+                <h3>Franchissement +1.5°C</h3>
+                <p id="kpi15">-</p>
+            </div>
+            <div class="kpi-box">
+                <h3>CO₂ Atmosphérique (2100)</h3>
+                <p id="kpiCo2">-</p>
+            </div>
+            <div class="kpi-box with-thermometer">
+                <div>
+                    <h3>Anomalie Température (2100)</h3>
+                    <p id="kpiTemp">-</p>
+                </div>
+                <div class="thermometer-wrapper">
+                    <div class="thermometer-tube">
+                        <div id="thermoMercury" class="thermometer-mercury"></div>
+                    </div>
+                    <div id="thermoBulb" class="thermometer-bulb"></div>
+                </div>
+            </div>
+            <div class="kpi-box">
+                <h3>Pente TCRE du Scénario</h3>
+                <p id="kpiTcre">-</p>
+            </div>
+        </div>
+
+        <div class="card full-width">
+            <h3 class="chart-title">Émissions fossiles</h3>
+            <div class="canvas-container">
+                <canvas id="chartFossilDF"></canvas>
+            </div>
+            <div class="analysis">
+                <strong>Analyse des émissions fossiles :</strong> La période historique basé sur les données réelles montre une augmentation des émissions fossiles depuis l'aire industrielle. À partir de 2005 (étant ici l'année de fin de nos données historiques), les scénarios s'écartent drastiquement : le scénario de transition immédiate (RCP 2.6) montre une baisse drastique des émissions dès les premières années, tandis que le scénario extrême (RCP 8.5) projette un triplement des émissions, sans réduction.
+            </div>
+        </div>
+
+        <div class="card full-width">
+            <h3 class="chart-title">Émissions liées à l'usage des sols</h3>
+            <div class="canvas-container">
+                <canvas id="chartLandDF"></canvas>
+            </div>
+            <div class="analysis">
+                <strong>Analyse de l'usage des sols :</strong> Contrairement aux flux fossiles, les émissions liées à l'agriculture et à la déforestation tendent à se stabiliser ou décroître dans la majorité des scénarios d'ici 2100. La baisse globale s'explique par la combinaison d'une stabilisation démographique mondiale, d'une amélioration des rendements agricoles et de l'intégration d'incitations financières massives pour stopper la déforestation.
+        </div>
+
+        <div class="card full-width">
+            <h3 class="chart-title">Puits de carbone indépendants</h3>
+            <div class="canvas-container">
+                <canvas id="chartSinks"></canvas>
+            </div>
+            <div class="analysis">
+                <strong>Analyse des puits de carbone :</strong> Ce graphique montre les différents puits de carbone (le reboisement, l'utilisation d'engrais et la pousse des forêts boréales) qui absorbent une partie de notre dioxyde de carbone, ainsi que leur action cumulée.
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="chart-title">Évolution comparative du CO₂ atmosphérique</h3>
+            <div class="canvas-container">
+                <canvas id="chartCO2Combined"></canvas>
+            </div>
+            <div class="analysis">
+                <strong>Bilan du CO₂ :</strong> La concentration atmosphérique suit les émissions fossiles. Le seul scénario qui stabilise les concentrations sous 450 ppm est RCP 2.6. Le scénario 4.5 dépasse le seuil des 450ppm mais redescend en dessous avant 2100.
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="chart-title">Évolution comparative de la température</h3>
+            <div class="canvas-container">
+                <canvas id="chartTempCombined"></canvas>
+            </div>
+            <div class="analysis">
+                <strong>Réponse thermique :</strong> Le comportement des températures est légèrement différent. Ce décalage peut être expliqué par l'inertie thermique des océans. Cette intertie décale la réponse du système. Même en stabilisant les concentrations (RCP 4.5), la température continue d'augmenter légèrement en raison du déséquilibre thermique accumulé.
+            </div>
+        </div>
+	
+        <div class="card full-width">
+            <h3 class="chart-title" id="titleReservoirs">Évolution temporelle absolue des réservoirs de carbone</h3>
+            <div class="canvas-container">
+                <canvas id="chartReservoirs"></canvas>
+            </div>
+            <div class="analysis">
+                <strong>Évolution des réservoirs :</strong> Ce graphique montre la quantité totale de carbone (Masse absolue en GtC) stockée au cours du temps dans chaque grand compartiment terrestre pour le scénario sélectionné.
+            </div>
+        </div>
+
+        <div class="card full-width">
+            <h3 class="chart-title" id="titleEuclidean">Distance euclidienne des réservoirs de carbone</h3>
+            <div class="canvas-container">
+                <canvas id="chartEuclidean"></canvas>
+            </div>
+            <div class="analysis">
+                <strong>État des réservoirs :</strong> Ce graphique montre la quantité totale de carbone (en GtC) stockée dans chaque compartiment de la Terre. On observe comment le carbone émis par les activités humaines se redistribue au cours du temps.
+            </div>
+        </div>
+
+        <div class="card full-width">
+            <h3 class="chart-title" id="titleSpeed">Vitesse d'évolution annuelle absolue des réservoirs de carbone</h3>
+            <div class="canvas-container">
+                <canvas id="chartSpeed"></canvas>
+            </div>
+            <div class="analysis">
+                <strong>Dynamique des réservoirs :</strong> Ce graphique utilise la distance euclidienne pour mesurer l'écart absolu accumulé par chaque réservoir par rapport à son niveau initial (1750). Cela permet de visualiser quel réservoir subit la plus forte perturbation.
+            </div>
+        </div>
+
+        <div class="card full-width">
+            <h3 class="chart-title">Analyse TCRE : Émissions vs Température & Comparaison GIEC AR6</h3>
+            <div class="canvas-container">
+                <canvas id="chartTCRE"></canvas>
+            </div>
+            <div class="analysis">
+                <strong>Cinétique des échanges :</strong> La vitesse d'échange (GtC/an) permet de visualiser la vitesse du changement dans les réservoirs. C'est une autre représentation de l'évolution des réservoirs. Cela permet de voir quel réservoir répond le plus au changement induit.
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- PARAMÈTRES ET CONSTANTES PHYSIQUES (CONFORMES PYTHON) ---
+    const startYear = 1750;
+    const endYear = 2100;
+    const dt = 1;
+    const CO2_preindustrial = 280;
+    const Tatm_initial = 288.15;
+    const Toc_initial = 283.0;
+    
+    const m_atmosphere = 5.1352e18;
+    const M_CO2 = 44.01;
+    const M_C = 12.01;
+    const M_air = 28.97;
+    const ppm_to_gtc = (m_atmosphere * (M_CO2 / M_air) * 1e-6 * (M_C / M_CO2)) / 1e12;
+
+    const K_aero = -0.7;
+    const K_CO2 = 3.7;
+    const tau_clim = 7;
+    const S = 0.6;
+
+    const tau_L = 2, tau_F = 20, tau_S = 500, epsilon = 0.5, MORT = 60, NPP0 = 60, beta = 0.36;
+    const S_carbon_initial = 1000;
+    const k_ALa = 0.05, k_LaA = 0.05, tau_AS = 50;
+
+    const scenarios = ["RCP2.6", "RCP4.5", "RCP6", "RCP8.5"];
+    const colors = { 'RCP2.6': 'blue', 'RCP4.5': 'green', 'RCP6': 'orange', 'RCP8.5': 'red' };
+    
+    let years = [];
+    for (let y = startYear; y <= endYear; y++) years.push(y);
+
+    // --- RECONSTRUCTION PARFAITE DES RÉSULTATS INTERPOLÉS DES .TXT ---
+    const rawFossilData = {
+        history: [{y:1750,v:0.0}, {y:1850,v:0.1}, {y:1900,v:0.5}, {y:1950,v:1.6}, {y:1980,v:5.3}, {y:2000,v:6.7}, {y:2005,v:7.8}],
+        "RCP2.6": [{y:2010,v:8.9}, {y:2020,v:9.4}, {y:2030,v:7.9}, {y:2040,v:5.1}, {y:2050,v:2.9}, {y:2080,v:0.4}, {y:2100,v:-0.4}],
+        "RCP4.5": [{y:2010,v:9.1}, {y:2020,v:10.5}, {y:2030,v:11.4}, {y:2040,v:11.8}, {y:2050,v:11.5}, {y:2080,v:5.2}, {y:2100,v:4.2}],
+        "RCP6":   [{y:2010,v:9.1}, {y:2020,v:10.2}, {y:2030,v:11.1}, {y:2040,v:12.3}, {y:2060,v:17.5}, {y:2080,v:12.1}, {y:2100,v:5.1}],
+        "RCP8.5": [{y:2010,v:9.3}, {y:2020,v:12.1}, {y:2030,v:15.1}, {y:2040,v:18.2}, {y:2050,v:21.3}, {y:2080,v:27.5}, {y:2100,v:28.8}]
+    };
+
+    const rawLandData = {
+        history: [{y:1750,v:0.2}, {y:1850,v:0.6}, {y:1900,v:0.9}, {y:1950,v:1.2}, {y:1980,v:1.4}, {y:2000,v:1.3}, {y:2005,v:1.2}],
+        "RCP2.6": [{y:2010,v:1.1}, {y:2020,v:0.8}, {y:2030,v:0.4}, {y:2040,v:0.1}, {y:2050,v:-0.1}, {y:2080,v:-0.3}, {y:2100,v:-0.4}],
+        "RCP4.5": [{y:2010,v:1.2}, {y:2020,v:0.9}, {y:2030,v:0.6}, {y:2040,v:0.3}, {y:2050,v:0.1}, {y:2080,v:-0.2}, {y:2100,v:-0.3}],
+        "RCP6":   [{y:2010,v:1.2}, {y:2020,v:1.1}, {y:2030,v:1.0}, {y:2040,v:0.9}, {y:2050,v:0.8}, {y:2080,v:0.4}, {y:2100,v:0.2}],
+        "RCP8.5": [{y:2010,v:1.2}, {y:2020,v:1.3}, {y:2030,v:1.2}, {y:2040,v:1.1}, {y:2050,v:1.0}, {y:2080,v:0.6}, {y:2100,v:0.4}]
+    };
+
+    function interpolateValue(year, rawData, scen) {
+        let points = [...rawData.history];
+        if (year > 2005) points = points.concat(rawData[scen]);
+        for (let i = 0; i < points.length - 1; i++) {
+            if (year >= points[i].y && year <= points[i+1].y) {
+                let p1 = points[i], p2 = points[i+1];
+                return p1.v + ((year - p1.y) / (p2.y - p1.y)) * (p2.v - p1.v);
+            }
+        }
+        return 0;
+    }
+
+    function generateDatabase() {
+        let dbFossil = { "RCP2.6": [], "RCP4.5": [], "RCP6": [], "RCP8.5": [] };
+        let dbLand = { "RCP2.6": [], "RCP4.5": [], "RCP6": [], "RCP8.5": [] };
+        years.forEach(y => {
+            scenarios.forEach(scen => {
+                dbFossil[scen].push({ x: y, y: interpolateValue(y, rawFossilData, scen) });
+                dbLand[scen].push({ x: y, y: interpolateValue(y, rawLandData, scen) });
+            });
+        });
+        return { dbFossil, dbLand };
+    }
+
+    const dataTables = generateDatabase();
+
+    function gaussienne(t, a, mu, sigma) {
+        return a * Math.exp(-Math.pow(t - mu, 2) / (2 * Math.pow(sigma, 2)));
+    }
+
+    function deforestation(t) {
+        if (t >= 1825 && t <= 2125) {
+            return 2.0 * 0.5 * (1 - Math.cos(Math.PI * (t - 1825) / 300));
+        }
+        return 0.0;
+    }
+
+    // --- MOTEUR PHYSIQUE ---
+    function runModel(scenario) {
+        let CO2_levels = new Array(years.length);
+        let Tatm_levels = new Array(years.length);
+        let Toc_levels = new Array(years.length);
+        let NPP_levels = new Array(years.length);
+        let L = new Array(years.length);
+        let F_soil = new Array(years.length);
+        let S_soil = new Array(years.length);
+        let A = new Array(years.length);
+        let La = new Array(years.length);
+        let O_surf = new Array(years.length);
+        let cumEmissionsGtc = new Array(years.length);
+
+        CO2_levels[0] = CO2_preindustrial;
+        Tatm_levels[0] = Tatm_initial;
+        Toc_levels[0] = Toc_initial;
+        
+        let L0 = tau_L * NPP0;
+        let F0 = (tau_L / tau_F) * (1 - epsilon) * L0;
+        let S0 = (tau_S / tau_F) * (1 - epsilon) * F0;
+        
+        L[0] = L0; F_soil[0] = F0; S_soil[0] = S0; 
+        A[0] = CO2_preindustrial * ppm_to_gtc;
+        La[0] = 500; 
+        O_surf[0] = S_carbon_initial;
+        cumEmissionsGtc[0] = 0;
+
+        let pCO2_ocean = CO2_preindustrial;
+        let totalCum = 0;
+
+        for (let i = 1; i < years.length; i++) {
+            let y = years[i];
+            let em_fossil = dataTables.dbFossil[scenario][i-1].y;
+            let em_land = dataTables.dbLand[scenario][i-1].y;
+            
+            let em_total_gtc = em_fossil + em_land;
+            totalCum += em_total_gtc;
+            cumEmissionsGtc[i] = totalCum;
+
+            let em_ppm = em_total_gtc / ppm_to_gtc;
+
+            let sink_gtc = gaussienne(y, 0.65, 1950, 20) + gaussienne(y, 0.5, 2010, 20) + gaussienne(y, 0.7, 1980, 20);
+            let sink_ppm = sink_gtc / ppm_to_gtc;
+
+            let delta_CO2 = CO2_levels[i-1] - pCO2_ocean;
+            let flux_ocean = (delta_CO2 / tau_AS) * dt;
+
+            CO2_levels[i] = CO2_levels[i-1] + (em_ppm - sink_ppm) * dt - flux_ocean;
+            if (CO2_levels[i] < CO2_preindustrial) CO2_levels[i] = CO2_preindustrial;
+
+            let F_CO2 = K_CO2 * (Math.log(CO2_levels[i] / CO2_preindustrial) / Math.log(2));
+            let F_aero = K_aero * (em_fossil / 10.0);
+            let R_forcing = F_CO2 + F_aero;
+
+            Tatm_levels[i] = Tatm_initial + S * R_forcing; 
+            Toc_levels[i] = Toc_levels[i-1] + (Tatm_levels[i] - Toc_levels[i-1]) * dt / tau_clim;
+
+            let current_NPP = NPP0 * (1 + beta * Math.log(CO2_levels[i-1] / CO2_preindustrial));
+            NPP_levels[i-1] = current_NPP;
+            let defor = deforestation(y);
+            
+            let dL_dt = current_NPP - L[i-1] / tau_L - MORT - defor;
+            let flux_L_to_F = L[i-1] / tau_L;
+            let dF_dt = flux_L_to_F - F_soil[i-1] / tau_F * (1 - epsilon);
+            let flux_F_to_S = F_soil[i-1] / tau_F;
+            let dS_dt = flux_F_to_S - S_soil[i-1] / tau_S * (1 - epsilon);
+
+            L[i] = L[i-1] + dL_dt * dt;
+            F_soil[i] = F_soil[i-1] + dF_dt * dt;
+            S_soil[i] = S_soil[i-1] + dS_dt * dt;
+
+            A[i] = CO2_levels[i] * ppm_to_gtc;
+            let FALa = k_ALa * (A[i-1] - A[0]);
+            let FLaA = k_LaA * (La[i-1] - La[0]);
+            La[i] = La[i-1] + (FALa - FLaA) * dt;
+            O_surf[i] = O_surf[i-1] + (A[i] - A[i-1]) - (La[i] - La[i-1]);
+        }
+        NPP_levels[years.length-1] = NPP0 * (1 + beta * Math.log(CO2_levels[years.length-1] / CO2_preindustrial));
+
+        return { CO2_levels, Tatm_levels, Toc_levels, NPP_levels, L, F_soil, S_soil, A, La, O_surf, cumEmissionsGtc };
+    }
+
+    // --- CONFIGURATIONS CHART.JS ---
+    let charts = {};
+
+    function initCharts() {
+        const commonOptions = {
+            responsive: true,
+            maintainAspectRatio: false, 
+            plugins: { legend: { position: 'bottom' } },
+            scales: {
+                x: { type: 'linear', min: 1750, max: 2100, ticks: { callback: v => v }, grid: { color: 'rgba(200, 200, 200, 0.2)' } },
+                y: { beginAtZero: true, grace: '8%', grid: { color: 'rgba(200, 200, 200, 0.2)' } }
+            }
+        };
+
+        charts.fossilDF = new Chart(document.getElementById('chartFossilDF').getContext('2d'), {
+            type: 'line', data: { datasets: [] },
+            options: { ...commonOptions, scales: { ...commonOptions.scales, y: { ...commonOptions.scales.y, title: { display: true, text: 'Émissions fossiles (GtCO₂/an)' } } } }
+        });
+
+        charts.landDF = new Chart(document.getElementById('chartLandDF').getContext('2d'), {
+            type: 'line', data: { datasets: [] },
+            options: { ...commonOptions, scales: { ...commonOptions.scales, y: { ...commonOptions.scales.y, title: { display: true, text: "Émissions de l'usage des sols (GtCO₂/an)" } } } }
+        });
+
+        let reboisement = years.map(y => ({ x: y, y: gaussienne(y, 0.65, 1950, 20) }));
+        let fertilisants = years.map(y => ({ x: y, y: gaussienne(y, 0.7, 1980, 20) }));
+        let foret_boreale = years.map(y => ({ x: y, y: gaussienne(y, 0.5, 2010, 20) }));
+        let totalPuits = years.map((y, idx) => ({ x: y, y: reboisement[idx].y + fertilisants[idx].y + foret_boreale[idx].y }));
+        
+        charts.sinks = new Chart(document.getElementById('chartSinks').getContext('2d'), {
+            type: 'line',
+            data: { datasets: [
+                { label: 'Reboisement', data: reboisement, borderColor: 'blue', backgroundColor: 'rgba(0,0,255,0.15)', fill: true, borderWidth: 2, pointRadius: 0 },
+                { label: 'Fertilisants', data: fertilisants, borderColor: 'orange', backgroundColor: 'rgba(255,165,0,0.15)', fill: true, borderWidth: 2, pointRadius: 0 },
+                { label: 'Forêt boréale', data: foret_boreale, borderColor: 'green', backgroundColor: 'rgba(0,128,0,0.15)', fill: true, borderWidth: 2, pointRadius: 0 },
+                { label: 'Puits de carbone totaux (Somme)', data: totalPuits, borderColor: 'red', borderWidth: 3, pointRadius: 0 }
+            ]}, 
+            options: { ...commonOptions, scales: { ...commonOptions.scales, y: { ...commonOptions.scales.y, title: { display: true, text: 'Flux de puits (GtC/an)' } } } }
+        });
+
+        charts.co2Combined = new Chart(document.getElementById('chartCO2Combined').getContext('2d'), {
+            type: 'line', data: { datasets: [] },
+            options: { ...commonOptions, scales: { ...commonOptions.scales, y: { ...commonOptions.scales.y, beginAtZero: false, title: { display: true, text: 'CO₂ atmosphérique (ppm)' } } } }
+        });
+
+        charts.tempCombined = new Chart(document.getElementById('chartTempCombined').getContext('2d'), {
+            type: 'line', data: { datasets: [] },
+            options: { ...commonOptions, scales: { ...commonOptions.scales, y: { ...commonOptions.scales.y, beginAtZero: false, title: { display: true, text: 'Température (K)' } } } }
+        });
+
+        charts.reservoirs = new Chart(document.getElementById('chartReservoirs').getContext('2d'), {
+            type: 'line', 
+            data: { datasets: [] },
+            options: { ...commonOptions, scales: { ...commonOptions.scales, y: { beginAtZero: false, title: { display: true, text: 'Stock absolu de carbone (GtC)' } } } }
+        });
+
+        charts.euclidean = new Chart(document.getElementById('chartEuclidean').getContext('2d'), {
+            type: 'line', data: { datasets: [] },
+            options: { ...commonOptions, scales: { ...commonOptions.scales, y: { ...commonOptions.scales.y, title: { display: true, text: 'Écart absolu accumulé (GtC)' } } } }
+        });
+
+        charts.speed = new Chart(document.getElementById('chartSpeed').getContext('2d'), {
+            type: 'line', data: { datasets: [] },
+            options: {
+                ...commonOptions,
+                scales: {
+                    x: { type: 'linear', min: 1751, max: 2100, grid: { color: 'rgba(200, 200, 200, 0.2)' } },
+                    y: { beginAtZero: true, title: { display: true, text: 'Variation absolue annuelle (GtC / an)' } }
+                }
+            }
+        });
+
+        charts.tcre = new Chart(document.getElementById('chartTCRE').getContext('2d'), {
+            type: 'line', data: { datasets: [] },
+            options: { 
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } }, 
+                scales: { 
+                    x: { type: 'linear', min: 0, max: 2500, title: { display: true, text: 'Émissions cumulées de carbone depuis 1750 (GtC)' } }, 
+                    y: { min: 0, title: { display: true, text: 'Échauffement global ΔT (K)' } } 
+                } 
+            }
+        });
+    }
+
+    // --- ACTUALISATION ---
+    function updateDashboard() {
+        let activeScenario = document.getElementById('scenarioSelect').value;
+        
+        let allData = {};
+        scenarios.forEach(scen => { allData[scen] = runModel(scen); });
+        let currentData = allData[activeScenario];
+
+        let idx2005 = years.indexOf(2005);
+
+        document.getElementById('titleReservoirs').innerText = `Évolution temporelle absolue des réservoirs de carbone (${activeScenario})`;
+        document.getElementById('titleEuclidean').innerText = `Distance euclidienne des réservoirs de carbone par rapport à l'état initial (${activeScenario})`;
+        document.getElementById('titleSpeed').innerText = `Vitesse d'évolution annuelle des réservoirs de carbone (${activeScenario})`;
+
+        let deltaT = currentData.Tatm_levels.map(t => t - Tatm_initial);
+        let idx15 = deltaT.findIndex(t => t >= 1.5);
+        document.getElementById('kpi15').innerText = idx15 !== -1 ? years[idx15] + " ⚠️" : "Non franchi d'ici 2100";
+        document.getElementById('kpiCo2').innerText = Math.round(currentData.CO2_levels[years.length - 1]) + " ppm";
+        
+        let finalTemp = currentData.Tatm_levels[years.length - 1];
+        document.getElementById('kpiTemp').innerText = finalTemp.toFixed(2) + " K";
+        
+        let finalDeltaT = finalTemp - Tatm_initial; 
+        let maxExpectedDeltaT = 5.0; 
+        let percentageHeight = Math.min((finalDeltaT / maxExpectedDeltaT) * 100, 100);
+        if (percentageHeight < 5) percentageHeight = 5;
+
+        let thermoColor = "#2ecc71";
+        if (finalDeltaT >= 1.5 && finalDeltaT < 2.5) {
+            thermoColor = "#e67e22";
+        } else if (finalDeltaT >= 2.5) {
+            thermoColor = "#e74c3c";
+        }
+
+        document.getElementById('thermoMercury').style.height = percentageHeight + "%";
+        document.getElementById('thermoMercury').style.backgroundColor = thermoColor;
+        document.getElementById('thermoBulb').style.backgroundColor = thermoColor;
+
+        let maxE = currentData.cumEmissionsGtc[years.length - 1];
+        let maxdT = deltaT[years.length - 1];
+        let slope = (maxdT / maxE) * 1000;
+        document.getElementById('kpiTcre').innerText = slope.toFixed(2) + " K / 1000 GtC";
+
+        let histFossil = dataTables.dbFossil[activeScenario].slice(0, idx2005 + 1);
+        let histLand = dataTables.dbLand[activeScenario].slice(0, idx2005 + 1);
+
+        charts.fossilDF.data.datasets = [
+            { label: 'Historique (1750-2005)', data: histFossil, borderColor: 'black', borderWidth: 3.5, pointRadius: 0 }
+        ].concat(scenarios.map(scen => ({
+            label: `Projection ${scen}`, data: dataTables.dbFossil[scen].slice(idx2005), borderColor: colors[scen], borderWidth: 2, pointRadius: 0
+        })));
+        charts.fossilDF.update();
+
+        charts.landDF.data.datasets = [
+            { label: 'Historique (1750-2005)', data: histLand, borderColor: 'black', borderWidth: 3.5, pointRadius: 0 }
+        ].concat(scenarios.map(scen => ({
+            label: `Projection ${scen}`, data: dataTables.dbLand[scen].slice(idx2005), borderColor: colors[scen], borderWidth: 2, pointRadius: 0
+        })));
+        charts.landDF.update();
+
+        let commonHistCO2 = years.slice(0, idx2005 + 1).map((y, idx) => ({ x: y, y: allData[activeScenario].CO2_levels[idx] }));
+        let commonHistTemp = years.slice(0, idx2005 + 1).map((y, idx) => ({ x: y, y: allData[activeScenario].Tatm_levels[idx] }));
+
+        charts.co2Combined.data.datasets = [
+            { label: 'Historique observé', data: commonHistCO2, borderColor: 'black', borderWidth: 3.5, pointRadius: 0 }
+        ].concat(scenarios.map(scen => ({
+            label: `Scénario ${scen}`, data: years.slice(idx2005).map((y, i) => ({ x: y, y: allData[scen].CO2_levels[idx2005 + i] })), borderColor: colors[scen], borderWidth: 2, pointRadius: 0
+        })));
+        charts.co2Combined.update();
+
+        charts.tempCombined.data.datasets = [
+            { label: 'Historique observé', data: commonHistTemp, borderColor: 'black', borderWidth: 3.5, pointRadius: 0 }
+        ].concat(scenarios.map(scen => ({
+            label: `Scénario ${scen}`, data: years.slice(idx2005).map((y, i) => ({ x: y, y: allData[scen].Tatm_levels[idx2005 + i] })), borderColor: colors[scen], borderWidth: 2, pointRadius: 0
+        })));
+        charts.tempCombined.update();
+
+        // --- APPLICATION DE LA CHARTE COULEUR HARMONISÉE POUR LES RÉSERVOIRS ---
+        let totalSolSeries = years.map((y, idx) => currentData.L[idx] + currentData.F_soil[idx] + currentData.S_soil[idx]);
+
+        charts.reservoirs.data.datasets = [
+            { label: 'Atmosphère (A)', data: years.map((y, idx) => ({ x: y, y: currentData.A[idx] })), borderColor: '#1e3a8a', borderWidth: 2.5, pointRadius: 0 },
+            { label: 'Océan de surface (O_surf)', data: years.map((y, idx) => ({ x: y, y: currentData.O_surf[idx] })), borderColor: '#0d9488', borderWidth: 2.5, pointRadius: 0 },
+            { label: 'Biosphère végétale (La)', data: years.map((y, idx) => ({ x: y, y: currentData.La[idx] })), borderColor: '#15803d', borderWidth: 2.5, pointRadius: 0 },
+            { label: 'Sols globaux (Litière + Humus)', data: years.map((y, idx) => ({ x: y, y: totalSolSeries[idx] })), borderColor: '#7c2d12', borderWidth: 2.5, pointRadius: 0 }
+        ];
+        charts.reservoirs.update();
+
+        let totalSolInit = currentData.L[0] + currentData.F_soil[0] + currentData.S_soil[0];
+        charts.euclidean.data.datasets = [
+            { label: 'Atmosphère (A)', data: years.map((y, idx) => ({ x: y, y: Math.abs(currentData.A[idx] - currentData.A[0]) })), borderColor: '#1e3a8a', borderWidth: 2.5, pointRadius: 0 },
+            { label: 'Océan de surface (O_surf)', data: years.map((y, idx) => ({ x: y, y: Math.abs(currentData.O_surf[idx] - currentData.O_surf[0]) })), borderColor: '#0d9488', borderWidth: 2.5, pointRadius: 0 },
+            { label: 'Biosphère végétale (La)', data: years.map((y, idx) => ({ x: y, y: Math.abs(currentData.La[idx] - currentData.La[0]) })), borderColor: '#15803d', borderWidth: 2.5, pointRadius: 0 },
+            { label: 'Sols globaux (Litière + Humus)', data: years.map((y, idx) => ({ x: y, y: Math.abs((currentData.L[idx] + currentData.F_soil[idx] + currentData.S_soil[idx]) - totalSolInit) })), borderColor: '#7c2d12', borderWidth: 2.5, pointRadius: 0 }
+        ];
+        charts.euclidean.update();
+
+        let diffYears = years.slice(1);
+        function getAbsoluteDiff(arr) {
+            let diffs = [];
+            for(let i=1; i<arr.length; i++) diffs.push(Math.abs(arr[i] - arr[i-1]));
+            return diffs;
+        }
+
+        charts.speed.data.datasets = [
+            { label: 'Atmosphère (A)', data: diffYears.map((y, i) => ({ x: y, y: getAbsoluteDiff(currentData.A)[i] })), borderColor: '#1e3a8a', borderWidth: 2.5, pointRadius: 0 },
+            { label: 'Océan de surface (O_surf)', data: diffYears.map((y, i) => ({ x: y, y: getAbsoluteDiff(currentData.O_surf)[i] })), borderColor: '#0d9488', borderWidth: 2.5, pointRadius: 0 },
+            { label: 'Biosphère végétale (La)', data: diffYears.map((y, i) => ({ x: y, y: getAbsoluteDiff(currentData.La)[i] })), borderColor: '#15803d', borderWidth: 2.5, pointRadius: 0 },
+            { label: 'Sols globaux (Litière + Humus)', data: diffYears.map((y, i) => ({ x: y, y: getAbsoluteDiff(totalSolSeries)[i] })), borderColor: '#7c2d12', borderWidth: 2.5, pointRadius: 0 }
+        ];
+        charts.speed.update();
+
+        let maxGlobalE = Math.max(...scenarios.map(scen => allData[scen].cumEmissionsGtc[years.length-1]));
+        
+        let tcreDatasets = [
+            {
+                label: 'Données Historiques (1750-2005)',
+                data: allData[activeScenario].cumEmissionsGtc.slice(0, idx2005 + 1).map((x, idx) => ({ x: x, y: allData[activeScenario].Tatm_levels[idx] - Tatm_initial })),
+                borderColor: 'black', borderWidth: 4, pointRadius: 0, showLine: true
+            }
+        ];
+
+        scenarios.forEach(scen => {
+            tcreDatasets.push({
+                label: `Projection ${scen}`,
+                data: allData[scen].cumEmissionsGtc.slice(idx2005).map((x, idx) => ({ x: x, y: allData[scen].Tatm_levels[idx2005 + idx] - Tatm_initial })),
+                borderColor: colors[scen],
+                borderWidth: scen === activeScenario ? 3.5 : 1.5,
+                pointRadius: 0, showLine: true
+            });
+        });
+
+        tcreDatasets.push({
+            label: 'Borne haute probable du GIEC (2.3 K / 1000 GtC)',
+            data: [{x: 0, y: 0}, {x: maxGlobalE, y: 0.0023 * maxGlobalE}],
+            borderColor: 'rgba(120,120,120,0.5)', borderDash: [4, 4], pointRadius: 0, showLine: true
+        });
+
+        tcreDatasets.push({
+            label: 'Valeur centrale GIEC AR6 (1.65 K / 1000 GtC)',
+            data: [{x: 0, y: 0}, {x: maxGlobalE, y: 0.00165 * maxGlobalE}],
+            borderColor: 'gray', borderDash: [6, 6], pointRadius: 0, showLine: true
+        });
+        
+        tcreDatasets.push({
+            label: 'Borne basse probable du GIEC (1.0 K / 1000 GtC)',
+            data: [{x: 0, y: 0}, {x: maxGlobalE, y: 0.0010 * maxGlobalE}],
+            borderColor: 'rgba(160,160,160,0.5)', borderDash: [4, 4], pointRadius: 0, showLine: true
+        });
+
+        charts.tcre.data.datasets = tcreDatasets;
+        charts.tcre.update();
+    }
+
+    window.onload = function() {
+        initCharts();
+        updateDashboard();
+    };
+</script>
+</body>
+</html>
