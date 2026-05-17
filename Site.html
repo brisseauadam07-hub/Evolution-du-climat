@@ -300,6 +300,278 @@
                 <strong>Cinétique des échanges :</strong> La vitesse d'échange (GtC/an) permet de visualiser la vitesse du changement dans les réservoirs. C'est une autre représentation de l'évolution des réservoirs. Cela permet de voir quel réservoir répond le plus au changement induit.
             </div>
         </div>
+	<div class="carbon-climate-container">
+    <style>
+        .carbon-climate-container {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px auto;
+            max-width: 1000px;
+            color: #333;
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .carbon-climate-container h2 {
+            color: #0f4c81;
+            border-bottom: 2px solid #0f4c81;
+            padding-bottom: 10px;
+            margin-top: 0;
+            font-size: 1.5rem;
+        }
+        .carbon-climate-container .controls {
+            margin: 20px 0;
+            background: #f4f7f6;
+            padding: 15px;
+            border-radius: 6px;
+        }
+        .carbon-climate-container label {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .carbon-climate-container select {
+            padding: 8px 12px;
+            font-size: 14px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            cursor: pointer;
+        }
+        .carbon-climate-container .table-wrapper {
+            max-height: 500px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-top: 15px;
+        }
+        .carbon-climate-container table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: center;
+            font-size: 14px;
+        }
+        .carbon-climate-container th {
+            background-color: #0f4c81;
+            color: white;
+            padding: 12px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .carbon-climate-container td {
+            padding: 10px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .carbon-climate-container tr:nth-child(even) {
+            background-color: #f9fbfd;
+        }
+        .carbon-climate-container tr:hover {
+            background-color: #eaeaea;
+        }
+        .carbon-climate-container .temp-col {
+            background-color: #fff5eb;
+            font-weight: bold;
+        }
+    </style>
+
+    <h2>Évolution de l'Équilibre Carbone avec Température Modélisée par Scénario</h2>
+    
+    <div class="controls">
+        <label for="scenarioSelector">Sélectionner un scénario climatique :</label>
+        <select id="scenarioSelector">
+            <option value="RCP2.6">RCP 2.6 (Profil Sobre)</option>
+            <option value="RCP4.5" selected>RCP 4.5 (Profil Intermédiaire Moyen)</option>
+            <option value="RCP6">RCP 6.0 (Profil Intermédiaire Haut)</option>
+            <option value="RCP8.5">RCP 8.5 (Profil Élevé / Intensif)</option>
+        </select>
+    </div>
+
+    <p><em>Note : Les températures de l'océan ($T_{oc}$) et de l'atmosphère ($T_{atm}$) affichées ci-dessous sont calculées dynamiquement année après année par les équations de forçage radiatif de votre modèle.</em></p>
+
+    <div class="table-wrapper">
+        <table id="dynamicClimateTable">
+            <thead>
+                <tr>
+                    <th>Année</th>
+                    <th>T Atm (K)</th>
+                    <th class="temp-col">T Océan Modélisée (K)</th>
+                    <th>ΣC Océan (mol/kg)</th>
+                    <th>pH Océan</th>
+                    <th>pCO₂ Océan (ppm)</th>
+                </tr>
+            </thead>
+            <tbody>
+                </tbody>
+        </table>
+    </div>
+
+    <script>
+        (function() {
+            // --- CONSTANTES PHYSIQUES ET CLIMATIQUES (Issues de votre code) ---
+            const f_ocean = 0.71;
+            const R_earth = 6.371e6;
+            const h_mix = 200;
+            const rho_ocean = 1025;
+            const M_C = 12.01;
+            
+            const K_aero = -0.7;
+            const K_CO2 = 3.7;
+            const tau_clim = 7;
+            const S_climat = 0.6; // Variable S renommé S_climat pour éviter conflit avec salinité S
+            const CO2_preindustrial = 280;
+            const Tatm_initial = 288.15;
+            const Toc_initial = 283.0;
+
+            const S_ocean_surface = f_ocean * 4 * Math.PI * Math.pow(R_earth, 2);
+            const masse_ocean_mix = S_ocean_surface * h_mix * rho_ocean;
+            const fraction_absorbee_ocean = 0.25;
+            const GtC_vers_mol = 1e15 / M_C;
+
+            // --- TA FONCTION CHIMIQUE D'ÉQUILIBRE ---
+            function EquilibreCarbone(T_kelvin, alk, SigmaC) {
+                let pH = 8.0;
+                const S = 34.78; // Salinité
+                const B = 1.179e-5 * S;
+                const T = T_kelvin;
+
+                const ln_K0 = -60.2409 + 9345.17/T + 23.3585 * Math.log(T/100) + S * (0.023517 - 0.00023656 * T + 0.0047036 * Math.pow(T/100, 2));
+                const ln_K1 = 2.18867 - 2275.036/T - 1.468591 * Math.log(T) + (-0.138681 - 9.3329117/T) * Math.sqrt(S) + 0.0726483*S - 0.00574938*Math.pow(S, 1.5);
+                const ln_K2 = -0.84226 - 3741.1288/T - 1.437139 * Math.log(T) + (-0.128417 - 24.41239/T) * Math.sqrt(S) + 0.1195308*S - 0.0091284*Math.pow(S, 1.5);
+                const ln_KB = ((-8966.9 - 2890.51*Math.sqrt(S) - 77.942*S + 1.726*Math.pow(S,1.5) - 0.0993*Math.pow(S,2))/T) + 148.0248 + 137.194*Math.sqrt(S) + 1.62247*S + (-24.4344 - 25.085*Math.sqrt(S) - 0.2474*S) * Math.log(T) + 0.053105*Math.sqrt(S)*T;
+
+                const K0 = Math.exp(ln_K0);
+                const K1 = Math.exp(ln_K1);
+                const K2 = Math.exp(ln_K2);
+                const KB = Math.exp(ln_KB);
+
+                let H = Math.pow(10, -pH);
+                const seuil = 1e-15;
+                let Hold = H + 10 * seuil;
+                let iter = 0;
+
+                while (Math.abs(H - Hold) > seuil && iter < 1500) {
+                    Hold = H;
+                    let CA = alk - (B * KB) / (H + KB);
+                    let a = CA;
+                    let b = K1 * (CA - SigmaC);
+                    let c = K1 * K2 * (CA - 2 * SigmaC);
+                    let discriminant = b*b - 4 * a * c;
+                    
+                    if (discriminant < 0) return { pH: null, pCO2: null };
+                    H = (-b + Math.sqrt(discriminant)) / (2 * a);
+                    iter++;
+                }
+
+                let CO2aq = (H*H * SigmaC) / (H*H + K1*H + K1*K2);
+                let pCO2 = (CO2aq / K0) * 1e6;
+                pH = -Math.log10(H);
+                return { pH: pH, pCO2: pCO2 };
+            }
+
+            // --- TON MODÈLE D'ÉVOLUTION DE LA TEMPÉRATURE (`update_temperature`) ---
+            function simulerAnneeClimat(CO2_level, F_fossile, Toc_old, dt) {
+                // Forçage radiatif du CO2
+                let F_CO2 = K_CO2 * (Math.log(CO2_level / CO2_preindustrial) / Math.log(2));
+                // Forçage radiatif des Aérosols
+                let F_aero = K_aero * (F_fossile / 10.0);
+                let R_forcage = F_CO2 + F_aero;
+
+                // Nouvelle température atmosphérique
+                let Tatm_new = Tatm_initial + S_climat * R_forcage;
+                // Évolution de la température océanique avec son inertie (tau_clim)
+                let Toc_new = Toc_old + (Tatm_new - Toc_old) * dt / tau_clim;
+
+                return { Tatm: Tatm_new, Toc: Toc_new };
+            }
+
+            // --- SIMULATION DES TRAJECTOIRES D'ÉMISSIONS SELON LE RCP CHOISI ---
+            function genererDonneesScenario(scenario, annee) {
+                let ef = 0.1; // Émissions fossiles par défaut (historique bas)
+                let el = 0.2; // Émissions usages des sols par défaut
+                
+                // Profils d'émissions simplifiés calqués fidèlement sur vos courbes (1750-2100)
+                if (annee > 1850 && annee <= 2005) {
+                    let r = (annee - 1850) / 155;
+                    ef = 0.1 + r * 7.5; 
+                    el = 0.2 + r * 1.0;
+                } else if (annee > 2005) {
+                    let t = annee - 2005;
+                    if (scenario === "RCP2.6") {
+                        ef = Math.max(0.5, 8.0 - t * 0.15); el = Math.max(-0.4, 1.2 - t * 0.02);
+                    } else if (scenario === "RCP4.5") {
+                        ef = (t <= 45) ? 8.0 + t * 0.05 : 10.25 - (t-45)*0.12; el = Math.max(0.05, 1.2 - t * 0.015);
+                    } else if (scenario === "RCP6") {
+                        ef = (t <= 55) ? 8.0 + t * 0.12 : 14.6 - (t-55)*0.2; el = Math.max(-0.4, 1.2 - t * 0.03);
+                    } else if (scenario === "RCP8.5") {
+                        ef = 8.0 + t * 0.18; el = Math.max(0.2, 1.2 - t * 0.012);
+                    }
+                }
+                return { fossile: ef, sol: el };
+            }
+
+            // --- SYSTÈME PRINCIPAL DE MISE À JOUR DU TABLEAU ---
+            function calculerEtAfficher() {
+                const sc = document.getElementById("scenarioSelector").value;
+                const tbody = document.querySelector("#dynamicClimateTable tbody");
+                tbody.innerHTML = ""; // On vide le tableau précédent
+
+                // Variables d'état initiales (1750)
+                let SigmaC_cumul = 1.95e-3; 
+                let cumul_ocean_gtc = 0.0;
+                let Toc_actuelle = Toc_initial; 
+                let Tatm_actuelle = Tatm_initial;
+                let alk_ocean = 2.3e-3;
+                let CO2_atm_ppm = CO2_preindustrial; 
+                
+                const dt = 1;
+
+                for (let annee = 1750; annee <= 2100; annee++) {
+                    // 1. Obtenir les émissions de l'année
+                    let emi = genererDonneesScenario(sc, annee);
+                    let total_emissions = emi.fossile + emi.sol;
+
+                    // 2. Évolution du CO2 atmosphérique pour calculer le forçage
+                    let flux_ocean = total_emissions * fraction_absorbee_ocean;
+                    cumul_ocean_gtc += flux_ocean * dt;
+                    
+                    // Approximation de la hausse du CO2 atm en ppm liée aux émissions accumulées
+                    if (annee > 1765) {
+                        CO2_atm_ppm = CO2_preindustrial + (cumul_ocean_gtc * 0.47); 
+                    }
+
+                    // 3. MISE À JOUR DE LA TEMPÉRATURE VIA VOTRE MODÈLE CLIMATIQUE
+                    let climat = simulerAnneeClimat(CO2_atm_ppm, emi.fossile, Toc_actuelle, dt);
+                    Toc_actuelle = climat.Toc;
+                    Tatm_actuelle = climat.Tatm;
+
+                    // 4. CALCUL DE L'ALCHIMIE DU CARBONE AVEC LA NOUVELLE TEMPÉRATURE TOC MODÉLISÉE !
+                    let delta_SigmaC = (flux_ocean * dt * GtC_vers_mol) / masse_ocean_mix;
+                    SigmaC_cumul += delta_SigmaC;
+
+                    let res = EquilibreCarbone(Toc_actuelle, alk_ocean, SigmaC_cumul);
+
+                    // 5. Filtrage de l'affichage (tous les 5 ans pour la lisibilité, ou supprime la condition pour tout avoir)
+                    if (annee === 1750 || annee % 5 === 0 || annee === 2100) {
+                        let row = document.createElement("tr");
+                        row.innerHTML = `
+                            <td><strong>${annee}</strong></td>
+                            <td>${Tatm_actuelle.toFixed(2)}</td>
+                            <td class="temp-col">${Toc_actuelle.toFixed(2)}</td>
+                            <td>${SigmaC_cumul.toExponential(4)}</td>
+                            <td>${res.pH ? res.pH.toFixed(4) : "Erreur"}</td>
+                            <td>${res.pCO2 ? res.pCO2.toFixed(2) : "Erreur"}</td>
+                        `;
+                        tbody.appendChild(row);
+                    }
+                }
+            }
+
+            // Événement au changement de scénario
+            document.getElementById("scenarioSelector").addEventListener("change", calculerEtAfficher);
+            // Premier calcul au chargement de la page
+            calculerEtAfficher();
+        })();
+    </script>
+</div>
     </div>
 </div>
 
