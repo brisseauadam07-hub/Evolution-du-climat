@@ -43,6 +43,30 @@
             border-radius: 8px;
             margin-bottom: 25px;
         }
+        .controls-logistic {
+            grid-column: span 2; /* S'étend sur toute la largeur de la grille */
+            background: #e3faf2;
+            border-left: 5px solid #2ecc71;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            margin-bottom: 15px;
+        }
+        .slider-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            width: 100%;
+            max-width: 600px;
+        }
+        .slider-wrapper input[type="range"] {
+            flex: 1;
+            cursor: pointer;
+        }
         select {
             padding: 10px 18px;
             font-size: 16px;
@@ -175,9 +199,9 @@
 	Face à l'urgence que représente le changement climatique, le GIEC propose différent scénarios d'évolution du climat en fonction des trajectoires politiques, économiques et technologiques effectué par l'humanité. Allant de la transtion immédiate (scénario optimiste) à des croissances basé sur un maintient des énergies fossiles (scénario pessimiste). L'étude de ces scénarios permet ainsi de modéliser la réponse du système climatique mondial face à l'impact anthropique.
     </div>
     <div class="controls">
-        <label for="scenarioSelect"><strong>Scénario d'analyse ciblé : </strong></label>
+        <label for="scenarioSelect"><strong>Sélectionner un scénario climatique : </strong></label>
         <select id="scenarioSelect" onchange="updateDashboard()">
-            <option value="RCP2.6">RCP 2.6 (Transition agressive)</option>
+            <option value="RCP2.6">RCP 2.6 (Transition forte)</option>
             <option value="RCP4.5" selected>RCP 4.5 (Stabilisation modérée)</option>
             <option value="RCP6">RCP 6.0 (Stabilisation tardive)</option>
             <option value="RCP8.5">RCP 8.5 (Scénario extrême)</option>
@@ -229,6 +253,7 @@
             </div>
             <div class="analysis">
                 <strong>Analyse de l'usage des sols :</strong> Contrairement aux flux fossiles, les émissions liées à l'agriculture et à la déforestation tendent à se stabiliser ou décroître dans la majorité des scénarios d'ici 2100. La baisse globale s'explique par la combinaison d'une stabilisation démographique mondiale, d'une amélioration des rendements agricoles et de l'intégration d'incitations financières massives pour stopper la déforestation.
+            </div>
         </div>
 
         <div class="card full-width">
@@ -247,7 +272,7 @@
                 <canvas id="chartCO2Combined"></canvas>
             </div>
             <div class="analysis">
-                <strong>Bilan du CO₂ :</strong> La concentration atmosphérique suit les émissions fossiles. Le seul scénario qui stabilise les concentrations sous 450 ppm est RCP 2.6. Le scénario 4.5 dépasse le seuil des 450ppm mais redescend en dessous avant 2100.
+                <strong>Bilan du CO₂ :</strong> La concentration atmosphérique suit les émissions fossiles. Le seul scénario qui stabilise les concentrations sous 450 ppm is RCP 2.6. Le scénario 4.5 dépasse le seuil des 450ppm mais redescend en dessous avant 2100.
             </div>
         </div>
 
@@ -300,18 +325,58 @@
                 <strong>Cinétique des échanges :</strong> La vitesse d'échange (GtC/an) permet de visualiser la vitesse du changement dans les réservoirs. C'est une autre représentation de l'évolution des réservoirs. Cela permet de voir quel réservoir répond le plus au changement induit.
             </div>
         </div>
+
+        <div class="controls-logistic">
+            <label for="endYearLogistic"><strong>Horizon temporel des modèles logistiques (Population, Forêts, Urbanisation) :</strong></label>
+            <div class="slider-wrapper">
+                <span>1960</span>
+                <input type="range" id="endYearLogistic" min="1960" max="2500" value="2100" oninput="updateLogisticCharts()">
+                <span id="endYearLabel" style="font-weight: bold; color: #2ecc71;">2100</span>
+            </div>
+        </div>
+
+        <div class="card full-width">
+            <h3 class="chart-title">Évolution de la population humaine depuis 1960</h3>
+            <div class="canvas-container">
+                <canvas id="chartHumainLogistique"></canvas>
+            </div>
+            <div class="analysis">
+                <strong>Analyse de la population :</strong> Modélisation de la croissance logistique de la population humaine stabilisée autour de sa capacité de charge.
+            </div>
+        </div>
+
+        <div class="card full-width">
+            <h3 class="chart-title">Déforestation depuis 1960</h3>
+            <div class="canvas-container">
+                <canvas id="chartForetsLogistique"></canvas>
+            </div>
+            <div class="analysis">
+                <strong>Analyse des surfaces forestières :</strong> Décroissance exponentielle de la surface globale des forêts due aux pressions anthropiques.
+            </div>
+        </div>
+
+        <div class="card full-width">
+            <h3 class="chart-title">Évolution des surfaces urbaines depuis 1960</h3>
+            <div class="canvas-container">
+                <canvas id="chartUrbainLogistique"></canvas>
+            </div>
+            <div class="analysis">
+                <strong>Analyse des surfaces urbaines :</strong> Modélisation logistique restreinte illustrant l'étalement urbain et l'artificialisation des sols.
+            </div>
+        </div>
+
 	<div class="carbon-climate-container">
     <style>
         .carbon-climate-container {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 20px auto;
-            max-width: 1000px;
+            margin: 25px 0;
+            grid-column: span 2; /* S'aligne sur la grille du dashboard si besoin */
             color: #333;
             background-color: #fff;
-            padding: 25px;
+            padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
+            border: 1px solid #e2e8f0; /* Même bordure subtile que les autres graphiques */
+	}
         .carbon-climate-container h2 {
             color: #0f4c81;
             border-bottom: 2px solid #0f4c81;
@@ -378,14 +443,14 @@
     <div class="controls">
         <label for="scenarioSelector">Sélectionner un scénario climatique :</label>
         <select id="scenarioSelector">
-            <option value="RCP2.6">RCP 2.6 (Profil Sobre)</option>
-            <option value="RCP4.5" selected>RCP 4.5 (Profil Intermédiaire Moyen)</option>
-            <option value="RCP6">RCP 6.0 (Profil Intermédiaire Haut)</option>
-            <option value="RCP8.5">RCP 8.5 (Profil Élevé / Intensif)</option>
+            <option value="RCP2.6">RCP 2.6 (Transition forte)</option>
+            <option value="RCP4.5" selected>RCP 4.5 (Stabilisation modérée)</option>
+            <option value="RCP6">RCP 6.0 (Stabilisation tardive)</option>
+            <option value="RCP8.5">RCP 8.5 (Scénario extrême)</option>
         </select>
     </div>
 
-    <p><em>Note : Les températures de l'océan ($T_{oc}$) et de l'atmosphère ($T_{atm}$) affichées ci-dessous sont calculées dynamiquement année après année par les équations de forçage radiatif de votre modèle.</em></p>
+    <p>Les températures de l'océan et de l'atmosphère affichées ci-dessous sont calculées année après année par le modèle. Ce qui permet par la suite de suivre l'équilibre du carbone présenté ci-dessous.</p>
 
     <div class="table-wrapper">
         <table id="dynamicClimateTable">
@@ -393,7 +458,7 @@
                 <tr>
                     <th>Année</th>
                     <th>T Atm (K)</th>
-                    <th class="temp-col">T Océan Modélisée (K)</th>
+                    <th>T Océan (K)</th>
                     <th>ΣC Océan (mol/kg)</th>
                     <th>pH Océan</th>
                     <th>pCO₂ Océan (ppm)</th>
@@ -406,7 +471,7 @@
 
     <script>
         (function() {
-            // --- CONSTANTES PHYSIQUES ET CLIMATIQUES (Issues de votre code) ---
+            // --- CONSTANTES PHYSIQUES ET CLIMATIQUES ---
             const f_ocean = 0.71;
             const R_earth = 6.371e6;
             const h_mix = 200;
@@ -416,7 +481,7 @@
             const K_aero = -0.7;
             const K_CO2 = 3.7;
             const tau_clim = 7;
-            const S_climat = 0.6; // Variable S renommé S_climat pour éviter conflit avec salinité S
+            const S_climat = 0.6; 
             const CO2_preindustrial = 280;
             const Tatm_initial = 288.15;
             const Toc_initial = 283.0;
@@ -429,7 +494,7 @@
             // --- TA FONCTION CHIMIQUE D'ÉQUILIBRE ---
             function EquilibreCarbone(T_kelvin, alk, SigmaC) {
                 let pH = 8.0;
-                const S = 34.78; // Salinité
+                const S = 34.78; 
                 const B = 1.179e-5 * S;
                 const T = T_kelvin;
 
@@ -467,28 +532,19 @@
                 return { pH: pH, pCO2: pCO2 };
             }
 
-            // --- TON MODÈLE D'ÉVOLUTION DE LA TEMPÉRATURE (`update_temperature`) ---
             function simulerAnneeClimat(CO2_level, F_fossile, Toc_old, dt) {
-                // Forçage radiatif du CO2
                 let F_CO2 = K_CO2 * (Math.log(CO2_level / CO2_preindustrial) / Math.log(2));
-                // Forçage radiatif des Aérosols
                 let F_aero = K_aero * (F_fossile / 10.0);
                 let R_forcage = F_CO2 + F_aero;
-
-                // Nouvelle température atmosphérique
                 let Tatm_new = Tatm_initial + S_climat * R_forcage;
-                // Évolution de la température océanique avec son inertie (tau_clim)
                 let Toc_new = Toc_old + (Tatm_new - Toc_old) * dt / tau_clim;
-
                 return { Tatm: Tatm_new, Toc: Toc_new };
             }
 
-            // --- SIMULATION DES TRAJECTOIRES D'ÉMISSIONS SELON LE RCP CHOISI ---
             function genererDonneesScenario(scenario, annee) {
-                let ef = 0.1; // Émissions fossiles par défaut (historique bas)
-                let el = 0.2; // Émissions usages des sols par défaut
+                let ef = 0.1; 
+                let el = 0.2; 
                 
-                // Profils d'émissions simplifiés calqués fidèlement sur vos courbes (1750-2100)
                 if (annee > 1850 && annee <= 2005) {
                     let r = (annee - 1850) / 155;
                     ef = 0.1 + r * 7.5; 
@@ -508,13 +564,11 @@
                 return { fossile: ef, sol: el };
             }
 
-            // --- SYSTÈME PRINCIPAL DE MISE À JOUR DU TABLEAU ---
             function calculerEtAfficher() {
                 const sc = document.getElementById("scenarioSelector").value;
                 const tbody = document.querySelector("#dynamicClimateTable tbody");
-                tbody.innerHTML = ""; // On vide le tableau précédent
+                tbody.innerHTML = ""; 
 
-                // Variables d'état initiales (1750)
                 let SigmaC_cumul = 1.95e-3; 
                 let cumul_ocean_gtc = 0.0;
                 let Toc_actuelle = Toc_initial; 
@@ -525,37 +579,31 @@
                 const dt = 1;
 
                 for (let annee = 1750; annee <= 2100; annee++) {
-                    // 1. Obtenir les émissions de l'année
                     let emi = genererDonneesScenario(sc, annee);
                     let total_emissions = emi.fossile + emi.sol;
 
-                    // 2. Évolution du CO2 atmosphérique pour calculer le forçage
                     let flux_ocean = total_emissions * fraction_absorbee_ocean;
                     cumul_ocean_gtc += flux_ocean * dt;
                     
-                    // Approximation de la hausse du CO2 atm en ppm liée aux émissions accumulées
                     if (annee > 1765) {
                         CO2_atm_ppm = CO2_preindustrial + (cumul_ocean_gtc * 0.47); 
                     }
 
-                    // 3. MISE À JOUR DE LA TEMPÉRATURE VIA VOTRE MODÈLE CLIMATIQUE
                     let climat = simulerAnneeClimat(CO2_atm_ppm, emi.fossile, Toc_actuelle, dt);
                     Toc_actuelle = climat.Toc;
                     Tatm_actuelle = climat.Tatm;
 
-                    // 4. CALCUL DE L'ALCHIMIE DU CARBONE AVEC LA NOUVELLE TEMPÉRATURE TOC MODÉLISÉE !
                     let delta_SigmaC = (flux_ocean * dt * GtC_vers_mol) / masse_ocean_mix;
                     SigmaC_cumul += delta_SigmaC;
 
                     let res = EquilibreCarbone(Toc_actuelle, alk_ocean, SigmaC_cumul);
 
-                    // 5. Filtrage de l'affichage (tous les 5 ans pour la lisibilité, ou supprime la condition pour tout avoir)
                     if (annee === 1750 || annee % 5 === 0 || annee === 2100) {
                         let row = document.createElement("tr");
                         row.innerHTML = `
                             <td><strong>${annee}</strong></td>
                             <td>${Tatm_actuelle.toFixed(2)}</td>
-                            <td class="temp-col">${Toc_actuelle.toFixed(2)}</td>
+                            <td>${Toc_actuelle.toFixed(2)}</td>
                             <td>${SigmaC_cumul.toExponential(4)}</td>
                             <td>${res.pH ? res.pH.toFixed(4) : "Erreur"}</td>
                             <td>${res.pCO2 ? res.pCO2.toFixed(2) : "Erreur"}</td>
@@ -565,9 +613,7 @@
                 }
             }
 
-            // Événement au changement de scénario
             document.getElementById("scenarioSelector").addEventListener("change", calculerEtAfficher);
-            // Premier calcul au chargement de la page
             calculerEtAfficher();
         })();
     </script>
@@ -576,7 +622,7 @@
 </div>
 
 <script>
-    // --- PARAMÈTRES ET CONSTANTES PHYSIQUES (CONFORMES PYTHON) ---
+    // --- PARAMÈTRES ET CONSTANTES PHYSIQUES ---
     const startYear = 1750;
     const endYear = 2100;
     const dt = 1;
@@ -605,7 +651,7 @@
     let years = [];
     for (let y = startYear; y <= endYear; y++) years.push(y);
 
-    // --- RECONSTRUCTION PARFAITE DES RÉSULTATS INTERPOLÉS DES .TXT ---
+    // --- RECONSTRUCTION DES RÉSULTATS INTERPOLÉS ---
     const rawFossilData = {
         history: [{y:1750,v:0.0}, {y:1850,v:0.1}, {y:1900,v:0.5}, {y:1950,v:1.6}, {y:1980,v:5.3}, {y:2000,v:6.7}, {y:2005,v:7.8}],
         "RCP2.6": [{y:2010,v:8.9}, {y:2020,v:9.4}, {y:2030,v:7.9}, {y:2040,v:5.1}, {y:2050,v:2.9}, {y:2080,v:0.4}, {y:2100,v:-0.4}],
@@ -742,6 +788,33 @@
         return { CO2_levels, Tatm_levels, Toc_levels, NPP_levels, L, F_soil, S_soil, A, La, O_surf, cumEmissionsGtc };
     }
 
+    // --- FONCTION DE RÉSOLUTION DES SYSTÈMES LOGISTIQUES ---
+    function runCroissanceLogistique(taux_augmentation, taux_diminution, K, duree_integration, P0) {
+        let t_points = [];
+        const steps = 4000;
+        for (let i = 0; i < steps; i++) {
+            t_points.push(1960 + (i * (duree_integration - 1960) / (steps - 1)));
+        }
+
+        let r = taux_augmentation - taux_diminution;
+        let P = new Array(steps);
+        P[0] = P0;
+
+        for (let i = 1; i < steps; i++) {
+            let dt_loc = t_points[i] - t_points[i-1];
+            if (taux_augmentation >= 0) {
+                let dP = r * P[i-1] * (1 - P[i-1] / K);
+                P[i] = P[i-1] + dP * dt_loc;
+            } else {
+                let r_exp = taux_augmentation;
+                let dP = r_exp * P[i-1];
+                P[i] = P[i-1] + dP * dt_loc;
+            }
+        }
+        
+        return t_points.map((t, idx) => ({ x: t, y: P[idx] }));
+    }
+
     // --- CONFIGURATIONS CHART.JS ---
     let charts = {};
 
@@ -825,9 +898,65 @@
                 } 
             }
         });
+
+        // --- OPTIONS INITIALES PROPRES AUX GRAPHES LOGISTIQUES ---
+        const logistiqueOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { type: 'linear', min: 1960, max: 2100, grid: { color: 'rgba(200, 200, 200, 0.2)' } },
+                y: { grid: { color: 'rgba(200, 200, 200, 0.2)' } }
+            }
+        };
+
+        // Graphe Population humaine
+        charts.humainLog = new Chart(document.getElementById('chartHumainLogistique').getContext('2d'), {
+            type: 'line',
+            data: { datasets: [{ data: [], borderColor: 'blue', borderWidth: 2.5, pointRadius: 0, fill: false }] },
+            options: { ...logistiqueOptions, scales: { ...logistiqueOptions.scales, y: { title: { display: true, text: 'Population (milliards)' } } } }
+        });
+
+        // Graphe Forêts
+        charts.foretsLog = new Chart(document.getElementById('chartForetsLogistique').getContext('2d'), {
+            type: 'line',
+            data: { datasets: [{ data: [], borderColor: 'green', borderWidth: 2.5, pointRadius: 0, fill: false }] },
+            options: { ...logistiqueOptions, scales: { ...logistiqueOptions.scales, y: { title: { display: true, text: 'Surface (millions km²)' } } } }
+        });
+
+        // Graphe Urbain
+        charts.urbainLog = new Chart(document.getElementById('chartUrbainLogistique').getContext('2d'), {
+            type: 'line',
+            data: { datasets: [{ data: [], borderColor: 'red', borderWidth: 2.5, pointRadius: 0, fill: false }] },
+            options: { ...logistiqueOptions, scales: { ...logistiqueOptions.scales, y: { title: { display: true, text: 'Surface (millions km²)' } } } }
+        });
     }
 
-    // --- ACTUALISATION ---
+    // --- FONCTION DE MISE À ZONE EXCLUSIVE DES GRAPHES LOGISTIQUES ---
+    function updateLogisticCharts() {
+        let currentEndYear = parseInt(document.getElementById('endYearLogistic').value);
+        if (currentEndYear <= 1960) currentEndYear = 1961; 
+        
+        document.getElementById('endYearLabel').innerText = currentEndYear;
+
+        let dataHumain = runCroissanceLogistique(0.016, 0.008, 13.4e9, currentEndYear, 3e9).map(pt => ({ x: pt.x, y: pt.y / 1e9 }));
+        let dataForets = runCroissanceLogistique(-0.0025, 0, 0, currentEndYear, 57.6);
+        let dataUrbain = runCroissanceLogistique(0.04, 0.00, 149, currentEndYear, 1.3);
+
+        charts.humainLog.data.datasets[0].data = dataHumain;
+        charts.humainLog.options.scales.x.max = currentEndYear;
+        charts.humainLog.update('none');
+
+        charts.foretsLog.data.datasets[0].data = dataForets;
+        charts.foretsLog.options.scales.x.max = currentEndYear;
+        charts.foretsLog.update('none');
+
+        charts.urbainLog.data.datasets[0].data = dataUrbain;
+        charts.urbainLog.options.scales.x.max = currentEndYear;
+        charts.urbainLog.update('none');
+    }
+
+    // --- ACTUALISATION DU DASHBOARD GENERAL ---
     function updateDashboard() {
         let activeScenario = document.getElementById('scenarioSelect').value;
         
@@ -904,7 +1033,6 @@
         })));
         charts.tempCombined.update();
 
-        // --- APPLICATION DE LA CHARTE COULEUR HARMONISÉE POUR LES RÉSERVOIRS ---
         let totalSolSeries = years.map((y, idx) => currentData.L[idx] + currentData.F_soil[idx] + currentData.S_soil[idx]);
 
         charts.reservoirs.data.datasets = [
@@ -979,6 +1107,8 @@
 
         charts.tcre.data.datasets = tcreDatasets;
         charts.tcre.update();
+
+        updateLogisticCharts();
     }
 
     window.onload = function() {
